@@ -3,10 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "./password-input";
+
 import React from "react";
+import { IconUserCircle } from "@tabler/icons-react";
 
 interface AuthFormProps {
-  type: "signup" | "signin" | "forgot-password" | "set-new-password";
+  type: "signup" | "login" | "forgot-password" | "set-new-password";
   onSubmit: (data: any) => void;
   onBack?: () => void;
   title?: string;
@@ -21,27 +24,13 @@ export function AuthForm({
   subtitle,
 }: AuthFormProps) {
   const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [isAgreed, setIsAgreed] = React.useState(false);
-  const [employeeId, setEmployeeId] = React.useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (type === "signup" && password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    onSubmit({
-      firstName,
-      lastName,
-      email,
-      password,
-      confirmPassword,
-      employeeId,
-    });
+    onSubmit({ firstName, lastName, email });
   };
 
   return (
@@ -50,7 +39,7 @@ export function AuthForm({
         <h1 className="text-4xl font-medium">
           {title
             ? title
-            : type === "signin"
+            : type === "login"
             ? "Sign In"
             : type === "signup"
             ? "Create an Account"
@@ -65,32 +54,30 @@ export function AuthForm({
 
       <div className="flex flex-col gap-5">
         {type === "signup" && (
-          <>
-            <div className="flex flex-row gap-2">
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="John"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Doe"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
-              </div>
+          <div className="flex flex-row gap-2">
+            <div className="grid gap-2 w-full">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
             </div>
-          </>
+            <div className="grid gap-2 w-full">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
+          </div>
         )}
 
         {type !== "set-new-password" && (
@@ -107,33 +94,21 @@ export function AuthForm({
           </div>
         )}
 
-        {(type === "signin" ||
+        {(type === "login" ||
           type === "signup" ||
           type === "set-new-password") && (
           <div className="grid gap-2">
             <Label htmlFor="password">
               {type === "set-new-password" ? "New Password" : "Password"}
             </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <PasswordInput />
           </div>
         )}
 
         {(type === "signup" || type === "set-new-password") && (
           <div className="grid gap-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+            <PasswordInput />
           </div>
         )}
 
@@ -152,7 +127,7 @@ export function AuthForm({
           </div>
         )}
 
-        {type === "signin" && (
+        {type === "login" && (
           <div className="flex items-center justify-between">
             <Label htmlFor="rememberMe" className="text-sm">
               Remember Me
@@ -172,7 +147,7 @@ export function AuthForm({
           type="submit"
           className="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
         >
-          {type === "signin"
+          {type === "login"
             ? "Sign In"
             : type === "signup"
             ? "Sign Up"
@@ -181,7 +156,7 @@ export function AuthForm({
             : "Reset Password"}
         </Button>
 
-        {(type === "signin" || type === "signup") && (
+        {(type === "login" || type === "signup") && (
           <>
             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
               <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -227,28 +202,38 @@ export function AuthForm({
           </>
         )}
 
-        {type === "signin" && (
+        {type === "login" && (
           <Button
             variant="outline"
             className="w-full"
             onClick={() => console.log("Sign In with Employee ID")}
           >
+            <IconUserCircle />
             Sign In with Employee ID
           </Button>
         )}
 
-        {(type === "signin" || type === "signup") && (
-          <div className="text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <a href="/auth/signup" className="underline underline-offset-4">
-              Sign up
+        {type === "signup" && (
+          <div className="text-center text-sm text-muted-foreground">
+            Already have an admin or employee account?{" "}
+            <a
+              href="/auth/login"
+              className="text-black underline underline-offset-4"
+            >
+              Sign in here
             </a>
           </div>
         )}
 
-        {type === "forgot-password" && (
-          <div className="flex items-center justify-center">
-            <Button type="submit">Send Reset Link</Button>
+        {type === "login" && (
+          <div className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account yet?{" "}
+            <a
+              href="/auth/signup"
+              className="text-black underline underline-offset-4"
+            >
+              Sign up now and get started
+            </a>
           </div>
         )}
 

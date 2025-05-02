@@ -18,21 +18,21 @@ export function AuthLayout({
   testimonials = [
     {
       quote:
-        "“Setelah menggunakan HRIS cmlabs, administrasi karyawan jadi lebih efisien.”",
+        "Setelah menggunakan HRIS cmlabs, administrasi karyawan jadi lebih efisien.",
       author: "Diana Monroe",
       position: "HR di PT. Indonesia Sejahtera",
       imageSrc:
         "https://images.pexels.com/photos/10041267/pexels-photo-10041267.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
     },
     {
-      quote: "“Sistem absensinya simpel, payroll jadi otomatis!”",
+      quote: "Sistem absensinya simpel, payroll jadi otomatis!",
       author: "Andi Suganda",
       position: "HRD di PT. Maju Jaya",
       imageSrc:
         "https://images.pexels.com/photos/7693223/pexels-photo-7693223.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
     },
     {
-      quote: "“Saya rekomendasikan platform ini ke semua HR!”",
+      quote: "Saya rekomendasikan platform ini ke semua HR!",
       author: "Siska Wulandari",
       position: "HR Manager di PT. Sumber Makmur",
       imageSrc:
@@ -43,10 +43,18 @@ export function AuthLayout({
 }: AuthLayoutProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [resetKey, setResetKey] = useState(0);
-  const [startAnimation, setStartAnimation] = useState(false);
+  const [isFirstRender, setIsFirstRender] = useState(true);
+  const [animationTrigger, setAnimationTrigger] = useState(0);
 
   useEffect(() => {
-    setStartAnimation(true);
+    // Only run after the first render to allow initial animation
+    if (isFirstRender) {
+      setIsFirstRender(false);
+      // Trigger initial animation after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        setAnimationTrigger((prev) => prev + 1);
+      }, 100);
+    }
 
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => {
@@ -59,7 +67,7 @@ export function AuthLayout({
     }, interval);
 
     return () => clearInterval(timer);
-  }, [interval, testimonials.length]);
+  }, [interval, testimonials.length, isFirstRender]);
 
   const currentTestimonial = testimonials[currentIndex];
 
@@ -85,22 +93,22 @@ export function AuthLayout({
                   className="relative h-1 flex-1 bg-white/30 rounded-full overflow-hidden"
                 >
                   <div
-                    className={`
-                      absolute left-0 top-0 h-full 
-                      ${index < currentIndex ? "bg-white transition-none" : ""}
-                      ${index === currentIndex ? "bg-white transition-all" : ""}
-                    `}
+                    className="absolute left-0 top-0 h-full bg-white transition-all"
                     style={{
                       width:
-                        index < currentIndex
+                        index === currentIndex
                           ? "100%"
-                          : index === currentIndex
+                          : index < currentIndex
                           ? "100%"
                           : "0%",
-                      transitionDuration:
-                        index === currentIndex && startAnimation
-                          ? `${interval}ms`
-                          : "0ms",
+                      transitionDuration: `${interval}ms`,
+                      transitionProperty: "width",
+                      // Use initial width of 0 for the current index on first render
+                      ...(index === 0 && currentIndex === 0 && isFirstRender
+                        ? { width: "0%" }
+                        : {}),
+                      // Ensure animation starts from the beginning
+                      transitionTimingFunction: "linear",
                     }}
                   />
                 </div>
