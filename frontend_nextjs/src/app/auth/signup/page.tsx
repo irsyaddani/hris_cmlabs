@@ -20,9 +20,8 @@ export default function SignUpPage() {
       <div className="flex justify-center items-center min-h-screen">
         <AuthForm
           type="signup"
-          onSubmit={handleSignUp}
-          title="Admin Sign Up"
           subtitle="Create your account and streamline your employee management."
+          onSubmit={handleSignUp}
         />
       </div>
     </AuthLayout>

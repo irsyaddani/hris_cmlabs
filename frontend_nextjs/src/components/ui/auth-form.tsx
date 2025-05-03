@@ -9,12 +9,7 @@ import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
 import React from "react";
 
 interface AuthFormProps {
-  type:
-    | "signup"
-    | "login"
-    | "forgot-password"
-    | "reset-password"
-    | "email-confirm";
+  type: "signup" | "login" | "forgot-password" | "reset-password";
   onSubmit: (data: any) => void;
   onBack?: () => void;
   title?: string;
@@ -33,6 +28,13 @@ export function AuthForm({
   const [lastName, setLastName] = React.useState("");
   const [isAgreed, setIsAgreed] = React.useState(false);
 
+  const titles = {
+    login: "Admin Sign In",
+    signup: "Admin Sign Up",
+    "forgot-password": "Forgot Password",
+    "reset-password": "Set New Password",
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({ firstName, lastName, email });
@@ -41,9 +43,7 @@ export function AuthForm({
   return (
     <form className="flex flex-col gap-7 font-inter" onSubmit={handleSubmit}>
       <div className="flex flex-col items-start gap-3 text-left">
-        {(type === "forgot-password" ||
-          type === "email-confirm" ||
-          type === "reset-password") &&
+        {(type === "forgot-password" || type === "reset-password") &&
           onBack && (
             <Button
               type="button"
@@ -55,21 +55,11 @@ export function AuthForm({
               <span className="text-md font-normal">Back</span>
             </Button>
           )}
-        <h1 className="text-4xl font-medium">
-          {title
-            ? title
-            : type === "login"
-            ? "Sign In"
-            : type === "signup"
-            ? "Create an Account"
-            : type === "forgot-password"
-            ? "Forgot Password"
-            : type === "email-confirm"
-            ? "Check Your Email"
-            : "Set New Password"}
-        </h1>
+
+        <h1 className="text-4xl font-medium">{title || titles[type] || ""}</h1>
+
         {subtitle && (
-          <p className="text-lg text-muted-foreground">{subtitle}</p>
+          <p className="text-lg/tight text-muted-foreground">{subtitle}</p>
         )}
       </div>
 

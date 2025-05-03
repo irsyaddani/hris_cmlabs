@@ -14,9 +14,8 @@ export default function LoginPage() {
       <div className="flex justify-center items-center min-h-screen">
         <AuthForm
           type="login"
-          onSubmit={handleLogin}
-          title="Admin Sign In"
           subtitle="Welcome back to HRIS CMLABS! Manage Everything with ease."
+          onSubmit={handleLogin}
         />
       </div>
     </AuthLayout>
