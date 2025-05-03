@@ -13,7 +13,7 @@ interface AuthFormProps {
     | "signup"
     | "login"
     | "forgot-password"
-    | "new-password"
+    | "reset-password"
     | "email-confirm";
   onSubmit: (data: any) => void;
   onBack?: () => void;
@@ -43,7 +43,7 @@ export function AuthForm({
       <div className="flex flex-col items-start gap-3 text-left">
         {(type === "forgot-password" ||
           type === "email-confirm" ||
-          type === "new-password") &&
+          type === "reset-password") &&
           onBack && (
             <Button
               type="button"
@@ -52,7 +52,7 @@ export function AuthForm({
               className="flex items-center gap-2 w-fit px-0"
             >
               <IconArrowLeft className="h-24 w-24" />
-              <span className="text-md font-normal">Kembali</span>
+              <span className="text-md font-normal">Back</span>
             </Button>
           )}
         <h1 className="text-4xl font-medium">
@@ -102,7 +102,7 @@ export function AuthForm({
             </div>
           )}
 
-          {type !== "new-password" && (
+          {type !== "reset-password" && (
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -118,16 +118,16 @@ export function AuthForm({
 
           {(type === "login" ||
             type === "signup" ||
-            type === "new-password") && (
+            type === "reset-password") && (
             <div className="grid gap-2">
               <Label htmlFor="password">
-                {type === "new-password" ? "New Password" : "Password"}
+                {type === "reset-password" ? "New Password" : "Password"}
               </Label>
               <PasswordInput />
             </div>
           )}
 
-          {(type === "signup" || type === "new-password") && (
+          {(type === "signup" || type === "reset-password") && (
             <div className="grid gap-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <PasswordInput />
@@ -159,7 +159,10 @@ export function AuthForm({
                   onChange={() => setIsAgreed(!isAgreed)}
                   required
                 />
-                <Label htmlFor="agreeTerms" className="text-sm text-[var(--color-neutral-500)]">
+                <Label
+                  htmlFor="agreeTerms"
+                  className="text-sm text-[var(--color-neutral-500)]"
+                >
                   Remember Me
                 </Label>
               </div>
@@ -175,15 +178,15 @@ export function AuthForm({
 
         <Button
           type="submit"
-          className="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
+          className="text-white font-medium bg-[var(--color-primary-900)] hover:bg-[var(--color-primary-700)]"
         >
           {type === "login"
-            ? "Sign In"
+            ? "Sign in"
             : type === "signup"
-            ? "Sign Up"
+            ? "Sign up"
             : type === "forgot-password"
-            ? "Send Link"
-            : "Reset Password"}
+            ? "Send link"
+            : "Reset password"}
         </Button>
 
         <div className="flex flex-col gap-4">
@@ -248,10 +251,7 @@ export function AuthForm({
           {type === "signup" && (
             <div className="text-center text-sm text-muted-foreground">
               Already have an admin or employee account?{" "}
-              <a
-                href="/auth/login"
-                className="text-black"
-              >
+              <a href="/auth/login" className="text-black">
                 Sign in here
               </a>
             </div>
@@ -260,10 +260,7 @@ export function AuthForm({
           {type === "login" && (
             <div className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account yet?{" "}
-              <a
-                href="/auth/signup"
-                className="text-black"
-              >
+              <a href="/auth/signup" className="text-black">
                 Sign up now and get started
               </a>
             </div>
