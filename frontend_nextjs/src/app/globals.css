@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --color-black: #1b1b1b;
 
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
@@ -54,28 +55,29 @@
   --color-accent-950: #40111d;
 
   --color-success-main: #257047;
-  --color-success-surface: #D3E2DA;
-  --color-success-border: #92B7A3;
+  --color-success-surface: #d3e2da;
+  --color-success-border: #92b7a3;
   --color-success-hover: #498866;
-  --color-success-pressed: #194B2F;
+  --color-success-pressed: #194b2f;
 
-  --color-danger-main: #C11106;
-  --color-danger-surface: #F3CFCD;
-  --color-danger-border: #EAB0AC;
-  --color-danger-hover: #CB3930;
-  --color-danger-pressed: #810B04;
+  --color-danger-main: #c11106;
+  --color-danger-surface: #f3cfcd;
+  --color-danger-border: #eab0ac;
+  --color-danger-hover: #cb3930;
+  --color-danger-pressed: #810b04;
 
-  --color-warning-main: #FFAB00;
-  --color-warning-surface: #FFEECC;
-  --color-warning-border: #FFD580;
-  --color-warning-hover: #FFB92B;
-  --color-warning-pressed: #AA7200;
+  --color-warning-main: #ffab00;
+  --color-warning-surface: #ffeecc;
+  --color-warning-border: #ffd580;
+  --color-warning-hover: #ffb92b;
+  --color-warning-pressed: #aa7200;
 
-  --color-blue-main: #2D8EFF;
-  --color-blue-surface: #D5E8FF;
-  --color-blue-border: #96C6FF;
-  --color-blue-hover: #50A1FF;
-  --color-blue-pressed: #1E5FAA;
+  --color-blue-main: #2d8eff;
+  --color-blue-surface: #d5e8ff;
+  --color-blue-border: #96c6ff;
+  --color-blue-hover: #50a1ff;
+  --color-blue-pressed: #1e5faa;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -155,7 +157,6 @@ body {
 }
 
 .dark {
-
   --background: oklch(0.145 0 0);
 
   --foreground: oklch(0.985 0 0);
