@@ -13,6 +13,7 @@
     "@felte/reporter-solid": "^1.2.11",
     "@felte/solid": "^1.2.14",
     "@felte/validator-zod": "^1.0.18",
+    "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-dialog": "^1.1.11",
     "@radix-ui/react-label": "^2.1.4",
     "@radix-ui/react-slot": "^1.2.0",
@@ -23,6 +24,8 @@
     "next": "15.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.5.3",
+    "tabler": "^1.0.0",
     "tailwind-merge": "^3.2.0",
     "zod": "^3.24.3"
   },
