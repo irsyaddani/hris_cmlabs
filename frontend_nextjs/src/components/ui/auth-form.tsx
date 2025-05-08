@@ -129,17 +129,29 @@
               </div>
             )}
 
-            {(isLogin || isSignup || isReset) && (
-              <div className="grid gap-2">
-                <Label htmlFor="password">
-                  {isReset ? "New Password" : "Password"}
-                </Label>
-                <PasswordInput {...register("password")} />
-                {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password.message}</p>
-                )}
-              </div>
-            )}
+{(isLogin || isSignup || isReset) && (
+  <div className="grid gap-2">
+    <Label htmlFor="password">
+      {isReset ? "New Password" : "Password"}
+    </Label>
+    <PasswordInput {...register("password")} />
+    {errors.password?.message && (
+      <div>
+        {/* Jika error berupa array, loop dan tampilkan */}
+        {Array.isArray(errors.password.message) ? (
+          errors.password.message.map((msg, idx) => (
+            <p key={idx} className="text-sm text-red-500">{msg}</p>
+          ))
+        ) : (
+          // Jika hanya ada satu pesan error, tampilkan saja
+          <p className="text-sm text-red-500">{errors.password.message}</p>
+        )}
+      </div>
+    )}
+  </div>
+)}
+
+
 
             {(isSignup || isReset) && (
               <div className="grid gap-2">

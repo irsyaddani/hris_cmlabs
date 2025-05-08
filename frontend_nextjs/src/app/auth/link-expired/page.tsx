@@ -11,7 +11,8 @@ export default function LinkExpiredPage() {
         <AuthFormConfirm
           type="link-expired" // Mengatur tipe sebagai link-expired
           title="Link Expired"
-          subtitle="The password reset link you clicked is no longer valid. Please request a new password reset link."
+          subtitle="The password reset link has expired.
+Please request a new link to reset your password."
           onSubmit={() => router.push("/forgot-password")} // Redirect ke halaman forgot password
           onBack={() => router.back()} // Kembali ke halaman sebelumnya
         />
