@@ -1,23 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { IconEye, IconEyeClosed } from "@tabler/icons-react";
-import React from "react";
+import React, { useState } from "react";
 
-export function PasswordInput() {
+interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+export function PasswordInput({ value, onChange, ...props }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
 
   return (
     <div className="relative">
       <Input
         type={showPassword ? "text" : "password"}
-        value={password}
         placeholder="Enter password"
         id="password"
-        onChange={(e) => setPassword(e.target.value)}
-        required
+        value={value}
+        onChange={onChange}
+        {...props}
       />
       <button
         type="button"

@@ -6,7 +6,12 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
 
 import React from "react";
-import { IconUserCircle } from "@tabler/icons-react";
+
+import axios from "axios";
+
+const API_URL = "http://localhost:8000";
+
+export const csrf = () => axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
 
 interface AuthFormProps {
   type: "signup" | "login" | "forgot-password" | "set-new-password";
@@ -27,11 +32,72 @@ export function AuthForm({
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [isAgreed, setIsAgreed] = React.useState(false);
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({ firstName, lastName, email });
+  const titles = {
+    login: "Admin Sign In",
+    signup: "Admin Sign Up",
+    "forgot-password": "Forgot Password",
+    "reset-password": "Set New Password",
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await csrf();
+  
+      if (type === "signup") {
+        const res = await axios.post(
+          `${API_URL}/api/signup`,
+          {
+            firstName,
+            lastName,
+            email,
+            password,
+            password_confirmation: confirmPassword,
+          },
+          { withCredentials: true }
+        );
+  
+        console.log("Signup success", res.data);
+        // setMessage("Signup successful!");
+        // setError("");
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setIsAgreed(false);
+      }
+  
+      if (type === "login") {
+        const res = await axios.post(
+          `${API_URL}/api/login`,
+          { email, password },
+          { withCredentials: true }
+        );
+  
+        console.log("Login success", res.data);
+        // setMessage("Login successful!");
+        // setError("");
+        setEmail("");
+        setPassword("");
+        setIsAgreed(false);
+  
+        // Opsional: redirect setelah login berhasil
+        window.location.href = "/dashboard";
+      }
+    }catch (err: any) {
+      console.error("Auth failed", err);
+      // // setMessage("");
+      // // setError(
+      //   err?.response?.data?.message || "Something went wrong, please try again."
+      // );
+    }
+  };
+  
 
   return (
     <form className="flex flex-col gap-7 font-inter" onSubmit={handleSubmit}>
@@ -94,23 +160,24 @@ export function AuthForm({
           </div>
         )}
 
-        {(type === "login" ||
-          type === "signup" ||
-          type === "set-new-password") && (
-          <div className="grid gap-2">
-            <Label htmlFor="password">
-              {type === "set-new-password" ? "New Password" : "Password"}
-            </Label>
-            <PasswordInput />
-          </div>
-        )}
+          {(type === "login" ||
+            type === "signup" ||
+            type === "reset-password") && (
+            <div className="grid gap-2">
+              <Label htmlFor="password">
+                {type === "reset-password" ? "New Password" : "Password"}
+              </Label>
+              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} />
 
-        {(type === "signup" || type === "set-new-password") && (
-          <div className="grid gap-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <PasswordInput />
-          </div>
-        )}
+            </div>
+          )}
+
+          {(type === "signup" || type === "reset-password") && (
+            <div className="grid gap-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            </div>
+          )}
 
         {type === "signup" && (
           <div className="flex items-center gap-2">
