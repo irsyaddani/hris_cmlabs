@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
-
+import { IconUserCircle } from "@tabler/icons-react";
 import React from "react";
 
 import axios from "axios";
