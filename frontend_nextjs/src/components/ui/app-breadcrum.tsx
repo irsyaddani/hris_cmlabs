@@ -15,39 +15,40 @@ export function AppBreadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter((seg) => seg !== "");
 
-  if (segments.length === 0) {
-    // kalau di root /, tampilkan kosong atau ga usah render apa-apa
-    return null;
-  }
-
   return (
     <Breadcrumb>
       <BreadcrumbList>
+        {/* Root breadcrumb */}
         <BreadcrumbItem>
-          {segments.length === 0 ? (
-            <BreadcrumbPage>Dashboard</BreadcrumbPage>
-          ) : (
-            <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-          )}
+          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
         </BreadcrumbItem>
-        {segments.map((segment, index) => (
-          <React.Fragment key={index}>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              {index === segments.length - 1 ? (
-                <BreadcrumbPage>
-                  {capitalize(segment.replace(/-/g, " "))}
-                </BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink
-                  href={`/${segments.slice(0, index + 1).join("/")}`}
-                >
-                  {capitalize(segment.replace(/-/g, " "))}
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
-          </React.Fragment>
-        ))}
+
+        {/* Render other segments */}
+        {segments.map((segment, index) => {
+          // Abaikan segmen pertama jika itu "dashboard"
+          if (index === 0 && segment === "dashboard") {
+            return null;
+          }
+
+          return (
+            <React.Fragment key={index}>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                {index === segments.length - 1 ? (
+                  <BreadcrumbPage>
+                    {capitalize(segment.replace(/-/g, " "))}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink
+                    href={`/${segments.slice(0, index + 1).join("/")}`}
+                  >
+                    {capitalize(segment.replace(/-/g, " "))}
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
+          );
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );
