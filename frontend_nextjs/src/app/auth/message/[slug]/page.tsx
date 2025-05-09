@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthMessage } from "@/components/ui/auth-message";
+import { notFound } from "next/navigation";
 
 const messageContent = {
   "email-confirm": {
@@ -17,13 +17,19 @@ const messageContent = {
   },
 };
 
-export default function MessagePage({ params }: { params: { slug: string } }) {
-  const content = messageContent[params.slug as keyof typeof messageContent];
+export default async function MessagePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const slug = params.slug;
+
+  const content = messageContent[slug as keyof typeof messageContent];
   if (!content) return notFound();
 
   return (
     <AuthLayout>
-      <AuthMessage type={params.slug as any} subtitle={content.subtitle} />
+      <AuthMessage type={slug as any} subtitle={content.subtitle} />
     </AuthLayout>
   );
 }

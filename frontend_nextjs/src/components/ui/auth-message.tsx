@@ -2,14 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { IconArrowLeft } from "@tabler/icons-react";
-import React from "react";
+import { useRouter } from "next/navigation";
 
 interface AuthMessageProps {
   type: "email-confirm" | "link-expired" | "reset-password-success";
   title?: string;
   subtitle?: string;
-  onBack?: () => void;
-  onAction?: () => void;
 }
 
 const titles = {
@@ -28,10 +26,22 @@ export function AuthMessage({
   type,
   title,
   subtitle,
-  onBack,
-  onAction,
 }: AuthMessageProps) {
-  const renderBackButton = type === "email-confirm" && onBack && (
+  const router = useRouter();
+
+  const handleAction = () => {
+    if (type === "email-confirm") {
+      window.open("https://mail.google.com", "_blank");
+    } else {
+      router.push("/auth/login");
+    }
+  };
+
+  const onBack = () => {
+    router.back();
+  };
+
+  const renderBackButton = type === "email-confirm" ? (
     <Button
       type="button"
       variant="ghost"
@@ -41,7 +51,7 @@ export function AuthMessage({
       <IconArrowLeft className="h-5 w-5" />
       <span className="text-md font-normal">Back</span>
     </Button>
-  );
+  ) : null;
 
   const renderSuccessIcon = (
     <svg
@@ -124,7 +134,7 @@ export function AuthMessage({
 
       <Button
         type="button"
-        onClick={onAction}
+        onClick={handleAction}
         className="w-full text-white font-medium bg-[var(--color-primary-900)] hover:bg-[var(--color-primary-700)]"
       >
         {buttonLabels[type]}
