@@ -22,11 +22,7 @@ const buttonLabels = {
   "reset-password-success": "Login Now",
 };
 
-export function AuthMessage({
-  type,
-  title,
-  subtitle,
-}: AuthMessageProps) {
+export function AuthMessage({ type, title, subtitle }: AuthMessageProps) {
   const router = useRouter();
 
   const handleAction = () => {
@@ -41,17 +37,18 @@ export function AuthMessage({
     router.back();
   };
 
-  const renderBackButton = type === "email-confirm" ? (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={onBack}
-      className="flex items-center gap-2 w-fit px-0"
-    >
-      <IconArrowLeft className="h-5 w-5" />
-      <span className="text-md font-normal">Back</span>
-    </Button>
-  ) : null;
+  const renderBackButton =
+    type === "email-confirm" ? (
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onBack}
+        className="flex items-center gap-2 w-fit px-0"
+      >
+        <IconArrowLeft className="h-5 w-5" />
+        <span className="text-md font-normal">Back</span>
+      </Button>
+    ) : null;
 
   const renderSuccessIcon = (
     <svg
