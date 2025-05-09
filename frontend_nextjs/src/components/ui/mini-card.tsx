@@ -31,7 +31,7 @@ export function MiniCard({
             </span>
             {title}
           </CardTitle>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <span className="font-medium text-2xl">{value}</span>
             <CardDescription className="text-md">{description}</CardDescription>
           </div>
