@@ -1,18 +1,8 @@
 "use client";
 
 import * as React from "react";
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react";
+import { usePathname } from "next/navigation"; // Import usePathname
+import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
 
 import { NavMain } from "@/components/ui/nav-main";
 import { NavUser } from "@/components/ui/nav-user";
@@ -34,7 +24,7 @@ import {
 // This is sample data.
 const data = {
   user: {
-    name: "shadcn",
+    name: "Emir Abiyyu",
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
@@ -80,13 +70,16 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname(); // Dapatkan URL saat ini
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        {/* Teruskan pathname ke NavMain */}
+        <NavMain items={data.navMain} activePath={pathname} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

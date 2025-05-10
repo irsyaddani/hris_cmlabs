@@ -62,12 +62,12 @@ export function DataTableToolbar<TData>({
           <IconFileImport />
           Import
         </Button>
-        <Link href="/employment/tambah-data">
+        <Link href="/dashboard/employment/add-new-employee">
           <Button
             size="default"
             className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
           >
-            Tambah Data
+            Add Data
           </Button>
         </Link>
         {/* {table.getColumn("id") && (
