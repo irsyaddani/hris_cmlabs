@@ -2,6 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useFormContext } from "react-hook-form";
 
 interface TextFieldProps {
   label: string;
@@ -18,6 +19,13 @@ export function TextField({
   type = "text",
   placeholder,
 }: TextFieldProps) {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
+
+  const error = errors[name]?.message as string | undefined;
+
   return (
     <div className="grid gap-2 w-full">
       <Label htmlFor={name}>
@@ -28,10 +36,11 @@ export function TextField({
       </Label>
       <Input
         id={name}
-        name={name}
         type={type}
         placeholder={placeholder || label}
+        {...register(name)}
       />
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }

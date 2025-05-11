@@ -3,7 +3,8 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { IconCalendar } from "@tabler/icons-react";
-import { useState, forwardRef } from "react";
+import { forwardRef } from "react";
+import { useFormContext, Controller } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -18,9 +19,13 @@ export function DatePickerField({
   name,
   required,
 }: DatePickerFieldProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
 
-  // Forward ref agar DatePicker bisa kontrol Input dari ShadCN
+  const error = errors[name]?.message as string | undefined;
+
   const CustomInput = forwardRef<HTMLInputElement, any>(
     ({ value, onClick }, ref) => (
       <div className="relative w-full">
@@ -30,7 +35,7 @@ export function DatePickerField({
           value={value}
           readOnly
           placeholder="Select a Date"
-          className="pr-10" // space for icon
+          className="pr-10"
         />
         <IconCalendar
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
@@ -49,20 +54,22 @@ export function DatePickerField({
           {required && <span className="text-red-500">*</span>}
         </span>
       </Label>
-      <DatePicker
-        selected={selectedDate}
-        onChange={(date: Date | null) => setSelectedDate(date)}
-        customInput={<CustomInput />}
-        showMonthDropdown
-        showYearDropdown
-        dropdownMode="scroll"
-        dateFormat="dd MMMM yyyy" // optional: tampilkan format yang lebih ramah
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <DatePicker
+            selected={field.value}
+            onChange={field.onChange}
+            customInput={<CustomInput />}
+            showMonthDropdown
+            showYearDropdown
+            dropdownMode="scroll"
+            dateFormat="dd MMMM yyyy"
+          />
+        )}
       />
-      {selectedDate && (
-        <p className="text-sm text-muted-foreground">
-          Selected Date: {selectedDate.toLocaleDateString()}
-        </p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }

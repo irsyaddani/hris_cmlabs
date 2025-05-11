@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useFormContext, Controller } from "react-hook-form";
 
 interface SelectFieldProps {
   label: string;
@@ -22,6 +23,13 @@ export function SelectField({
   required,
   options,
 }: SelectFieldProps) {
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
+
+  const error = errors[name]?.message as string | undefined;
+
   return (
     <div className="grid gap-2 w-full">
       <Label htmlFor={name}>
@@ -30,18 +38,25 @@ export function SelectField({
           {required && <span className="text-red-500">*</span>}
         </span>
       </Label>
-      <Select>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={`Select ${label}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <Select onValueChange={field.onChange} value={field.value}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={`Select ${label}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }
