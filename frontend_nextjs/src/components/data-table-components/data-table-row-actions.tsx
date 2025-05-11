@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDots } from "@tabler/icons-react";
+import Link from "next/link";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -41,13 +42,13 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem>Edit</DropdownMenuItem>
-        <DropdownMenuItem>Make a copy</DropdownMenuItem>
-        <DropdownMenuItem>Favorite</DropdownMenuItem>
+        <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <Link href="/dashboard/employment/employee-details">
+          <DropdownMenuItem>Details</DropdownMenuItem>
+        </Link>
+        <DropdownMenuItem className="text-[var(--color-danger-main)] hover:text-[var(--color-danger-hover)]">
           Delete
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

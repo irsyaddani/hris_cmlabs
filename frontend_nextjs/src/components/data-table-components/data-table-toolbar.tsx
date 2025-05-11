@@ -11,8 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CalendarDatePicker } from "@/components/calendar-date-picker";
 import { useState } from "react";
-import { TrashIcon } from "lucide-react";
-import { IconCross, IconFileExport, IconFileImport } from "@tabler/icons-react";
+import {
+  IconFileExport,
+  IconFileImport,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import Link from "next/link";
 
 interface DataTableToolbarProps<TData> {
@@ -38,14 +42,24 @@ export function DataTableToolbar<TData>({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-1 flex-wrap items-center gap-2">
-        <Input
-          placeholder="Search employee..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) => {
-            table.getColumn("name")?.setFilterValue(event.target.value);
-          }}
-          className="h-8 w-[150px] lg:w-[250px]"
-        />
+        <div className="relative w-[150px] lg:w-[250px]">
+          <Input
+            placeholder="Search employee..."
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) => {
+              table.getColumn("name")?.setFilterValue(event.target.value);
+            }}
+            className="h-9 w-full pr-10"
+          />
+          {isFiltered && (
+            <button
+              onClick={() => table.resetColumnFilters()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-6 w-6"
+            >
+              <IconX className="h-4 w-4 text-gray-600" />
+            </button>
+          )}
+        </div>
         <Button
           size="default"
           className="gap-2 hover:bg-[var(--color-neutral-200)]"
@@ -62,55 +76,26 @@ export function DataTableToolbar<TData>({
           <IconFileImport />
           Import
         </Button>
-        <Link href="/employment/tambah-data">
+        <Link href="/dashboard/employment/add-new-employee">
           <Button
             size="default"
             className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
           >
-            Tambah Data
+            Add Data
           </Button>
         </Link>
-        {/* {table.getColumn("id") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("id")}
-            title="ID Employee"
-            options={categories}
-          />
-        )} */}
-        {/* {table.getColumn("type") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("type")}
-            title="Type"
-            options={incomeType}
-          />
-        )} */}
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
-            className="h-8 px-2 lg:px-3"
-          >
-            Reset
-            {/* <Cross2Icon className="ml-2 h-4 w-4" /> */}
-            <IconCross className="ml-2 h-4 w-4" />
+        {table.getFilteredSelectedRowModel().rows.length > 0 ? (
+          <Button variant="outline" size="default">
+            <IconTrash className="mr-2 size-4" aria-hidden="true" />
+            Delete ({table.getFilteredSelectedRowModel().rows.length})
           </Button>
-        )}
+        ) : null}
         {/* <CalendarDatePicker
           date={dateRange}
           onDateSelect={handleDateSelect}
           className="h-9 w-[250px]"
           variant="outline"
         /> */}
-      </div>
-
-      <div className="flex items-center gap-2">
-        {table.getFilteredSelectedRowModel().rows.length > 0 ? (
-          <Button variant="outline" size="sm">
-            <TrashIcon className="mr-2 size-4" aria-hidden="true" />
-            Delete ({table.getFilteredSelectedRowModel().rows.length})
-          </Button>
-        ) : null}
-        {/* <DataTableViewOptions table={table} /> */}
       </div>
     </div>
   );

@@ -1,9 +1,3 @@
-// import {
-//     ChevronLeftIcon,
-//     ChevronRightIcon,
-//     DoubleArrowLeftIcon,
-//     DoubleArrowRightIcon,
-//   } from "@radix-ui/react-icons";
 import { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconChevronLeft } from "@tabler/icons-react";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+} from "@tabler/icons-react";
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
@@ -64,7 +63,7 @@ export function DataTablePagination<TData>({
           >
             <span className="sr-only">Go to first page</span>
             {/* <DoubleArrowLeftIcon className="h-4 w-4" /> */}
-            <IconChevronLeft className="h-4 w-4" />
+            <IconChevronsLeft className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
@@ -84,7 +83,7 @@ export function DataTablePagination<TData>({
           >
             <span className="sr-only">Go to next page</span>
             {/* <ChevronRightIcon className="h-4 w-4" /> */}
-            <IconChevronLeft className="h-4 w-4" />
+            <IconChevronRight className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
@@ -94,7 +93,7 @@ export function DataTablePagination<TData>({
           >
             <span className="sr-only">Go to last page</span>
             {/* <DoubleArrowRightIcon className="h-4 w-4" /> */}
-            <IconChevronLeft className="h-4 w-4" />
+            <IconChevronsRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

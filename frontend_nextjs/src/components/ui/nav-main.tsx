@@ -10,16 +10,29 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function NavMain({
-  items,
-}: {
+export interface NavMainProps {
   items: {
     title: string;
     url: string;
     icon?: TablerIcon;
   }[];
-}) {
-  const pathname = usePathname();
+  activePath?: string; // Add activePath to the props
+}
+
+export function NavMain({ items, activePath }: NavMainProps) {
+  // Cari item dengan URL terpanjang yang cocok
+  const activeItem = items.reduce(
+    (longestMatch, item) => {
+      if (
+        activePath?.startsWith(item.url) &&
+        item.url.length > longestMatch.url.length
+      ) {
+        return item;
+      }
+      return longestMatch;
+    },
+    { url: "" }
+  ); // Default nilai awal
 
   return (
     <SidebarGroup>
@@ -32,7 +45,7 @@ export function NavMain({
                 href={item.url}
                 className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg transition 
                   ${
-                    pathname === item.url
+                    activeItem.url === item.url // Hanya item dengan URL terpanjang yang cocok dianggap aktif
                       ? "font-medium text-primary bg-neutral-400/20"
                       : "text-muted-foreground hover:bg-muted"
                   }

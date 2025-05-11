@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -9,46 +9,33 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "./button";
+import { IconArrowLeft } from "@tabler/icons-react";
 import * as React from "react";
-
 export function AppBreadcrumb() {
   const pathname = usePathname();
+  const router = useRouter();
   const segments = pathname.split("/").filter((seg) => seg !== "");
+
+  // Ambil segmen terakhir
+  const currentPage = segments[segments.length - 1] || "Dashboard";
+
+  // Tentukan apakah ini adalah sub-page
+  const isSubPage = segments.length > 2;
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {/* Root breadcrumb */}
+        {isSubPage && (
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <IconArrowLeft className="text-black w-6 h-6" />
+          </Button>
+        )}
         <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+          <BreadcrumbPage>
+            {capitalize(currentPage.replace(/-/g, " "))}
+          </BreadcrumbPage>
         </BreadcrumbItem>
-
-        {/* Render other segments */}
-        {segments.map((segment, index) => {
-          // Abaikan segmen pertama jika itu "dashboard"
-          if (index === 0 && segment === "dashboard") {
-            return null;
-          }
-
-          return (
-            <React.Fragment key={index}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {index === segments.length - 1 ? (
-                  <BreadcrumbPage>
-                    {capitalize(segment.replace(/-/g, " "))}
-                  </BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink
-                    href={`/${segments.slice(0, index + 1).join("/")}`}
-                  >
-                    {capitalize(segment.replace(/-/g, " "))}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          );
-        })}
       </BreadcrumbList>
     </Breadcrumb>
   );
