@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Employee } from "./schema";
+import { Employee } from "./schemas/employment-table-schema";
 import { DataTableColumnHeader } from "./data-table-column-header";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,7 +43,23 @@ export const columns: ColumnDef<Employee>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
+    cell: ({ row }) => {
+      const name = row.getValue("name") as string;
+      //   avatar
+      //   const avatarUrl = row.original.avatarUrl as string | undefined;
+
+      return (
+        <div className="flex items-center gap-2">
+          {/* <img
+            src={avatarUrl || "/default-avatar.png"}
+            alt={name}
+            className="w-7 h-7 rounded-full object-cover"
+          /> */}
+          <div className="w-6 h-6 rounded-full bg-blue-500" />
+          <span className="capitalize">{name}</span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "phone",
@@ -106,6 +122,6 @@ export const columns: ColumnDef<Employee>[] = [
   // },
   {
     id: "actions",
-    cell: ({ row }) => <DataTableRowActions row={row} />,
+    cell: ({ row }) => <DataTableRowActions row={row} variant="employment" />,
   },
 ];
