@@ -28,14 +28,19 @@ import {
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";
 
+// ✅ Tambahkan tipe untuk toolbarVariant
+type ToolbarVariant = "employment" | "checkclock";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  toolbarVariant?: ToolbarVariant; // ✅ Optional, bisa default
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  toolbarVariant = "employment", // ✅ Default jika tidak diset
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -44,6 +49,15 @@ export function DataTable<TData, TValue>({
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  // Ambil tanggal hari ini
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   const table = useReactTable({
     data,
@@ -70,8 +84,20 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-        <p className="font-bold text-2xl">Employee list</p>
-        <DataTableToolbar table={table} />
+        {/* Judul section */}
+        <div>
+          <p className="font-bold text-2xl">
+            {toolbarVariant === "checkclock"
+              ? "Attendance Monitor"
+              : "Employee List"}
+          </p>
+          {/* Tanggal jika variant checkclock */}
+          {toolbarVariant === "checkclock" && (
+            <p className="text-sm font-reguler text-muted-foreground">{`${formattedDate} (Today)`}</p>
+          )}
+        </div>
+        {/* Kirim variant ke toolbar */}
+        <DataTableToolbar table={table} variant={toolbarVariant} />
       </div>
       <div className="overflow-y-auto rounded-md border">
         <Table>

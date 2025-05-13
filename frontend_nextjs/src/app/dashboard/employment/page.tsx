@@ -1,7 +1,7 @@
 "use client";
 
 import { DataTable } from "../../../components/data-table-components/data-table";
-import { columns } from "../../../components/data-table-components/columns";
+import { columns } from "../../../components/data-table-components/columns-employment";
 import { MiniCard } from "@/components/ui/mini-card";
 import { IconUsers } from "@tabler/icons-react";
 
@@ -77,7 +77,11 @@ export default function EmploymentPage() {
         />
       </div>
 
-      <DataTable data={dummyData} columns={columns} />
+      <DataTable
+        data={dummyData}
+        columns={columns}
+        toolbarVariant="employment"
+      />
     </div>
   );
 }

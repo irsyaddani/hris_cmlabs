@@ -1,30 +1,30 @@
 "use client";
 
-// import { Cross2Icon } from "@radix-ui/react-icons";
-import { incomeType, categories } from "./data";
-import { DataTableFacetedFilter } from "./data-table-faceted-filter";
-// import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
-// import { DataTableViewOptions } from "./data-table-view-options";
+import { useState } from "react";
+import Link from "next/link";
 import { Table } from "@tanstack/react-table";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { CalendarDatePicker } from "@/components/calendar-date-picker";
-import { useState } from "react";
+
 import {
   IconFileExport,
   IconFileImport,
+  IconSettings,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import Link from "next/link";
 
+// Tipe untuk variant
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  variant?: "employment" | "checkclock";
 }
 
 export function DataTableToolbar<TData>({
   table,
+  variant = "employment",
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -35,13 +35,13 @@ export function DataTableToolbar<TData>({
 
   const handleDateSelect = ({ from, to }: { from: Date; to: Date }) => {
     setDateRange({ from, to });
-    // Filter table data based on selected date range
     table.getColumn("date")?.setFilterValue([from, to]);
   };
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-1 flex-wrap items-center gap-2">
+        {/* 🔍 Search Field */}
         <div className="relative w-[150px] lg:w-[250px]">
           <Input
             placeholder="Search employee..."
@@ -60,42 +60,63 @@ export function DataTableToolbar<TData>({
             </button>
           )}
         </div>
-        <Button
-          size="default"
-          className="gap-2 hover:bg-[var(--color-neutral-200)]"
-          variant="secondary"
-        >
-          <IconFileExport />
-          Export
-        </Button>
-        <Button
-          size="default"
-          className="gap-2 hover:bg-[var(--color-neutral-200)]"
-          variant="secondary"
-        >
-          <IconFileImport />
-          Import
-        </Button>
-        <Link href="/dashboard/employment/add-new-employee">
-          <Button
-            size="default"
-            className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
-          >
-            Add Data
-          </Button>
-        </Link>
-        {table.getFilteredSelectedRowModel().rows.length > 0 ? (
+
+        {/* ✨ Conditionally Render Buttons Based on Variant */}
+        {variant === "employment" && (
+          <>
+            <Button
+              size="default"
+              className="gap-2 hover:bg-[var(--color-neutral-200)]"
+              variant="outline"
+            >
+              <IconFileExport />
+              Export
+            </Button>
+            <Button
+              size="default"
+              className="gap-2 hover:bg-[var(--color-neutral-200)]"
+              variant="outline"
+            >
+              <IconFileImport />
+              Import
+            </Button>
+            <Link href="/dashboard/employment/add-new-employee">
+              <Button
+                size="default"
+                className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
+              >
+                Add Data
+              </Button>
+            </Link>
+          </>
+        )}
+
+        {variant === "checkclock" && (
+          <>
+            <CalendarDatePicker
+              date={dateRange}
+              onDateSelect={handleDateSelect}
+              className="h-9 w-[250px]"
+              variant="outline"
+            />
+            <Button
+              size="default"
+              variant="outline"
+              className="gap-2 hover:bg-[var(--color-neutral-200)]"
+            >
+              <IconSettings />
+              Settings
+            </Button>
+          </>
+        )}
+
+        {/* 🗑️ Delete Button (Global untuk keduanya) */}
+        {table.getFilteredSelectedRowModel().rows.length > 0 && (
           <Button variant="outline" size="default">
             <IconTrash className="mr-2 size-4" aria-hidden="true" />
             Delete ({table.getFilteredSelectedRowModel().rows.length})
           </Button>
-        ) : null}
-        {/* <CalendarDatePicker
-          date={dateRange}
-          onDateSelect={handleDateSelect}
-          className="h-9 w-[250px]"
-          variant="outline"
-        /> */}
+        )}
       </div>
     </div>
   );
