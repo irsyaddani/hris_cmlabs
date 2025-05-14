@@ -182,7 +182,7 @@ export const columns: ColumnDef<Checkclock>[] = [
                 variant="outline"
                 onClick={() => console.log(`Rejected: ${row.getValue("id")}`)}
               >
-                <IconX />
+                <IconX className="h-4 w-4" />
               </Button>
             </div>
           );

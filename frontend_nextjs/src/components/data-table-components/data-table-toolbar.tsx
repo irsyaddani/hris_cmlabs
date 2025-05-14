@@ -15,6 +15,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
+import { DateRangePicker } from "../date-range-picker";
 
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
@@ -69,7 +70,7 @@ export function DataTableToolbar<TData>({
               className="gap-2 hover:bg-[var(--color-neutral-200)]"
               variant="outline"
             >
-              <IconFileExport />
+              <IconFileExport className="h-4 w-4" />
               Export
             </Button>
             <Button
@@ -77,7 +78,7 @@ export function DataTableToolbar<TData>({
               className="gap-2 hover:bg-[var(--color-neutral-200)]"
               variant="outline"
             >
-              <IconFileImport />
+              <IconFileImport className="h-4 w-4" />
               Import
             </Button>
             <Link href="/dashboard/employment/add-new-employee">
@@ -93,18 +94,24 @@ export function DataTableToolbar<TData>({
 
         {variant === "checkclock" && (
           <>
-            <CalendarDatePicker
+            {/* <CalendarDatePicker
               date={dateRange}
               onDateSelect={handleDateSelect}
               className="h-9 w-[250px]"
               variant="outline"
-            />
+            /> */}
+            {/* <DateRangePicker
+              triggerSize="sm"
+              triggerClassName="ml-auto w-56 sm:w-60 mr-1"
+              className="dark:bg-background/95 dark:backdrop-blur-md dark:supports-[backdrop-filter]:bg-background/50"
+              align="end"
+            /> */}
             <Button
               size="default"
               variant="outline"
               className="gap-2 hover:bg-[var(--color-neutral-200)]"
             >
-              <IconSettings />
+              <IconSettings className="h-4 w-4" />
               Settings
             </Button>
           </>
