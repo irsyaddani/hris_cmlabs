@@ -55,7 +55,11 @@ export default function AddNewEmployeePage() {
                 </div>
                 <div className="flex space-x-3">
                   <TextField label="Birth Place" name="birthPlace" required />
-                  <DatePickerField label="Birth Date" name="birthDate" required />
+                  <DatePickerField
+                    label="Birth Date"
+                    name="birthDate"
+                    required
+                  />
                 </div>
                 <TextField label="NIK" name="nik" required />
                 <SelectField
@@ -74,8 +78,14 @@ export default function AddNewEmployeePage() {
                   name="lastEducation"
                   required
                   options={[
-                    { label: "High School or Equivalent", value: "high_school" },
-                    { label: "Vocational High School", value: "vocational_high_school" },
+                    {
+                      label: "High School or Equivalent",
+                      value: "high_school",
+                    },
+                    {
+                      label: "Vocational High School",
+                      value: "vocational_high_school",
+                    },
                     { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
                     { label: "Master's Degree (S2)", value: "master" },
                     { label: "Doctorate (S3)", value: "doctorate" },
@@ -156,10 +166,18 @@ export default function AddNewEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextField label="Account Number" name="accountNumber" required />
+                <TextField
+                  label="Account Number"
+                  name="accountNumber"
+                  required
+                />
               </div>
               <div className="space-y-4">
-                <TextField label="Bank Account Name" name="bankAccountName" required />
+                <TextField
+                  label="Bank Account Name"
+                  name="bankAccountName"
+                  required
+                />
               </div>
             </div>
           </FormSection>

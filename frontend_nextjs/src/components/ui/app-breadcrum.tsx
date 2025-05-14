@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -9,33 +9,39 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "./button";
-import { IconArrowLeft } from "@tabler/icons-react";
-import * as React from "react";
+import Link from "next/link";
+import React from "react";
+
 export function AppBreadcrumb() {
   const pathname = usePathname();
-  const router = useRouter();
-  const segments = pathname.split("/").filter((seg) => seg !== "");
+  const segments = pathname.split("/").filter(Boolean);
 
-  // Ambil segmen terakhir
-  const currentPage = segments[segments.length - 1] || "Dashboard";
-
-  // Tentukan apakah ini adalah sub-page
-  const isSubPage = segments.length > 2;
+  const breadcrumbs = segments.map((seg, idx) => {
+    const href = "/" + segments.slice(0, idx + 1).join("/");
+    return {
+      label: capitalize(seg.replace(/-/g, " ")),
+      href,
+      isLast: idx === segments.length - 1,
+    };
+  });
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {isSubPage && (
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <IconArrowLeft className="text-black w-6 h-6" />
-          </Button>
-        )}
-        <BreadcrumbItem>
-          <BreadcrumbPage>
-            {capitalize(currentPage.replace(/-/g, " "))}
-          </BreadcrumbPage>
-        </BreadcrumbItem>
+        {breadcrumbs.map((crumb, i) => (
+          <React.Fragment key={i}>
+            <BreadcrumbItem>
+              {crumb.isLast ? (
+                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+              ) : (
+                <BreadcrumbLink asChild>
+                  <Link href={crumb.href}>{crumb.label}</Link>
+                </BreadcrumbLink>
+              )}
+            </BreadcrumbItem>
+            {!crumb.isLast && <BreadcrumbSeparator />}
+          </React.Fragment>
+        ))}
       </BreadcrumbList>
     </Breadcrumb>
   );
