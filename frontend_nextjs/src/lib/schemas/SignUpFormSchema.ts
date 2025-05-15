@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const RegisterFormSchema = z
   .object({
-    name: z.string().nonempty("First name is required"),
+    firstName: z.string().nonempty("First name is required"),
     lastName: z.string().nonempty("Last name is required"),
     email: z.string().nonempty("Email is required").email("Invalid email format"),
     password: z
