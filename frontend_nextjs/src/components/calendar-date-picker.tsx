@@ -414,7 +414,6 @@ export const CalendarDatePicker = React.forwardRef<
               onClick={handleTogglePopover}
               suppressHydrationWarning
             >
-              {/* <CalendarIcon className="mr-2 h-4 w-4" /> */}
               <IconCalendar className="mr-2 h-4 w-4" />
               <span>
                 {date?.from ? (
@@ -547,7 +546,7 @@ export const CalendarDatePicker = React.forwardRef<
           {isPopoverOpen && (
             <PopoverContent
               className="w-auto"
-              align="end"
+              align="start"
               avoidCollisions={false}
               onInteractOutside={handleClose}
               onEscapeKeyDown={handleClose}
