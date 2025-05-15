@@ -44,4 +44,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'id_employee');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'id_company');
+    }
+
 }

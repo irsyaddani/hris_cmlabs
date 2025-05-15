@@ -14,6 +14,9 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
 import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
 import React from "react";
+import axios from "axios";
+export const csrf = () => axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+const API_URL = "http://localhost:8000";
 
 interface AuthFormProps {
   type: "signup" | "login" | "forgot-password" | "reset-password";
@@ -93,10 +96,10 @@ export function AuthForm({
                   id="name"
                   type="text"
                   placeholder="First Name"
-                  {...register("name")}
+                  {...register("firstName")}
                 />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                {errors.firstName && (
+                  <p className="text-sm text-red-500">{errors.firstName.message}</p>
                 )}
               </div>
 

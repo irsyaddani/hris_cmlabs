@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('check_clock_settings', function (Blueprint $table) {
             $table->id();
-            $table->time('clock_in');
-            $table->time('clock_out');
-            $table->time('break_start');
-            $table->time('break_end');
+            $table->time('clockIn');
+            $table->time('clockOut');
+            $table->time('breakStart');
+            $table->time('breakEnd');
             $table->timestamps();
         });
     }

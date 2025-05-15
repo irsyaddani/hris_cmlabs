@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Http\Request;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function signup(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:100',
@@ -36,13 +37,15 @@ class AuthController extends Controller
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'companyName' => $request->company_name ?? null,
         ]);
 
         Employee::create([
-            'userId'    => $user->id,
-            'firstName' => $request->first_name,
-            'lastName'  => $request->last_name,
+            'firstName' => $request->firstName,
+            'lastName'  => $request->lastName,
+        ]);
+
+        Company::create([
+            'companyName' => $request->companyName ?? null,
         ]);
 
         return response()->json([
