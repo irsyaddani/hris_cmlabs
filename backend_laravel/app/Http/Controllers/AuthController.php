@@ -8,6 +8,8 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -16,14 +18,14 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:100',
             'lastName'  => 'required|string|max:100',
-            'email'      => 'required|email|unique:users,email',
-            'password'   => [
+            'email'     => 'required|email|unique:users,email',
+            'password'  => [
                 'required',
                 'string',
                 'min:8',
-                'regex:/[A-Z]/',       // uppercase
-                'regex:/[a-z]/',       // lowercase
-                'regex:/[^A-Za-z0-9]/' // special character
+                'regex:/[A-Z]/',       // huruf besar
+                'regex:/[a-z]/',       // huruf kecil
+                'regex:/[^A-Za-z0-9]/' // karakter khusus
             ],
         ]);
 
@@ -34,18 +36,20 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        $company = Company::create([
+            'companyName' => $request->companyName ?? null,
         ]);
 
-        Employee::create([
+        $employee = Employee::create([
             'firstName' => $request->firstName,
             'lastName'  => $request->lastName,
         ]);
 
-        Company::create([
-            'companyName' => $request->companyName ?? null,
+        $user = User::create([
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'employee_id' => $employee->id,
+            'company_id'  => $company->id,
         ]);
 
         return response()->json([
@@ -53,6 +57,7 @@ class AuthController extends Controller
             'user'    => $user,
         ], 201);
     }
+
 
     public function login(Request $request)
     {
@@ -76,6 +81,4 @@ class AuthController extends Controller
             'user'    => $user,
         ]);
     }
-
-
 }

@@ -1,5 +1,3 @@
-// CONFIG CORS.PHP
-
 <?php
 
 return [

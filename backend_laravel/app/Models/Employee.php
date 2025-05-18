@@ -14,29 +14,28 @@ class Employee extends Model
     protected $fillable = [
         'id_employee',
         'id_ck_settings',
-        'first_name',
-        'last_name',
-        'mobile_number',
+        'firstName',
+        'lastName',
+        'mobileNumber',
         'nik',
         'gender',
-        'pend_terakhir',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jabatan',
-        'cabang',
-        'tipe_kontrak',
+        'lastEducation',
+        'birthPlace',
+        'birthDate',
+        'position',
+        'branch',
+        'employeeType',
         'grade',
         'bank',
-        'no_rekening',
-        'an_rekening',
+        'accountNumber',
+        'bankAccountName',
         'level',
-        'join_date',
     ];
 
     protected $dates = ['tanggal_lahir', 'join_date'];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->hasOne(User::class);
     }
 }
