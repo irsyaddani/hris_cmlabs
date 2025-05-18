@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('bank')->nullable();
             $table->string('accountNumber')->nullable();
             $table->string('bankAccountName')->nullable();
-            $table->enum('level', ['user', 'admin'])->default('user')->nullable();
+            $table->enum('level', ['user', 'admin'])->default('admin')->nullable();
             $table->timestamps();
         });
     }
