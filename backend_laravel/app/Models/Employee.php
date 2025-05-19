@@ -30,13 +30,12 @@ class Employee extends Model
         'accountNumber',
         'bankAccountName',
         'level',
-        'joinDate',
     ];
 
     protected $dates = ['birthDate', 'joinDate'];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->hasOne(User::class);
     }
 }

@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
-            $table->foreignId('id_ck_settings')->constrained('check_clock_settings')->onDelete('cascade');
+            $table->foreignId('id_ck_settings')->nullable()->constrained('check_clock_settings')->onDelete('cascade');
             $table->string('firstName');
             $table->string('lastName');
             $table->string('mobileNumber')->nullable();
@@ -30,7 +29,7 @@ return new class extends Migration
             $table->string('bank')->nullable();
             $table->string('accountNumber')->nullable();
             $table->string('bankAccountName')->nullable();
-            $table->enum('level', ['user', 'admin'])->default('user')->nullable();
+            $table->enum('level', ['user', 'admin'])->default('admin')->nullable();
             $table->timestamps();
         });
     }
