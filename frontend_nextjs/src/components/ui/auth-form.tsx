@@ -14,6 +14,9 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
 import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
 import React from "react";
+import axios from "axios";
+export const csrf = () => axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+const API_URL = "http://localhost:8000";
 
 interface AuthFormProps {
   type: "signup" | "login" | "forgot-password" | "reset-password";
@@ -53,10 +56,50 @@ export function AuthForm({
     "reset-password": "Set New Password",
   };
 
-  const submitForm = (data: RegisterFormType) => {
-    if (type === "signup" && !isAgreed) return;
-    onSubmit(data);
+  // const submitForm = (data: RegisterFormType) => {
+  //   if (type === "signup" && !isAgreed) return;
+  //   onSubmit(data);
+  // };
+
+  const submitForm = async (data: RegisterFormType) => {
+    try {
+      await csrf();
+
+      if (type === "signup") {
+        const res = await axios.post(
+          `${API_URL}/api/signup`,
+          {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            password: data.password,
+            password_confirmation: data.confirmPassword,
+          },
+          { withCredentials: true }
+        );
+
+        console.log("Signup success", res.data);
+      }
+
+      if (type === "login") {
+        const res = await axios.post(
+          `${API_URL}/api/login`,
+          {
+            email: data.email,
+            password: data.password,
+          },
+          { withCredentials: true }
+        );
+
+        console.log("Login success", res.data);
+        window.location.href = "/dashboard";
+      }
+    } catch (err: any) {
+      console.error("Auth failed", err);
+    }
   };
+
+
 
   return (
     <form
@@ -90,23 +133,23 @@ export function AuthForm({
               <div className="grid gap-2 w-full">
                 <Label htmlFor="name">First Name</Label>
                 <Input
-                  id="name"
+                  id="firstName"
                   type="text"
                   placeholder="First Name"
-                  {...register("name")}
+                  {...register("firstName")}
                 />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                {errors.firstName && (
+                  <p className="text-sm text-red-500">{errors.firstName.message}</p>
                 )}
               </div>
 
               <div className="grid gap-2 w-full">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
-                  id="lastNa.lome"
+                  id="lastName"
                   type="text"
                   placeholder="Last Name"
-                  {...register("lastName")} // ✅ Tambahkan ini
+                  {...register("lastName")}
                 />
                 {errors.lastName && (
                   <p className="text-sm text-red-500">
@@ -137,7 +180,8 @@ export function AuthForm({
               <Label htmlFor="password">
                 {isReset ? "New Password" : "Password"}
               </Label>
-              <PasswordInput {...register("password")} />
+              <PasswordInput 
+              {...register("password")} />
               {errors.password?.message && (
                 <div>
                   {/* Jika error berupa array, loop dan tampilkan */}
