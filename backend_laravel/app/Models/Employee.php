@@ -12,28 +12,28 @@ class Employee extends Model
     protected $table = 'employees';
 
     protected $fillable = [
-        'id_employee',
+        'id_user',
         'id_ck_settings',
-        'first_name',
-        'last_name',
-        'mobile_number',
+        'firstName',
+        'lastName',
+        'mobileNumber',
         'nik',
         'gender',
-        'pend_terakhir',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jabatan',
-        'cabang',
-        'tipe_kontrak',
+        'lastEducation',
+        'birthPlace',
+        'birthDate',
+        'position',
+        'branch',
+        'employeeType',
         'grade',
         'bank',
-        'no_rekening',
-        'an_rekening',
+        'accountNumber',
+        'bankAccountName',
         'level',
-        'join_date',
+        'joinDate',
     ];
 
-    protected $dates = ['tanggal_lahir', 'join_date'];
+    protected $dates = ['birthDate', 'joinDate'];
 
     public function user()
     {
