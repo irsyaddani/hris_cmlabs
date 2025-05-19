@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('branch')->nullable();
             $table->string('employeeType')->nullable();
             $table->string('grade')->nullable();
+            $table->date('joinDate')->nullable();
             $table->string('bank')->nullable();
             $table->string('accountNumber')->nullable();
             $table->string('bankAccountName')->nullable();

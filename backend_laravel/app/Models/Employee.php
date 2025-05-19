@@ -12,7 +12,7 @@ class Employee extends Model
     protected $table = 'employees';
 
     protected $fillable = [
-        'id_user',
+        'id_employee',
         'id_ck_settings',
         'firstName',
         'lastName',
@@ -26,6 +26,7 @@ class Employee extends Model
         'branch',
         'employeeType',
         'grade',
+        'joinDate',
         'bank',
         'accountNumber',
         'bankAccountName',
