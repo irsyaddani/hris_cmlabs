@@ -1,23 +1,41 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+Route::controller(AuthController::class)->group(function () {
+    Route::post('/signup', 'signup');
+    Route::post('/login', 'login');
 });
 
 
-Route::post("/signup", [AuthController::class, "signup"]);
-Route::post("/login", [AuthController::class, "login"]);
-Route::group(["middleware" => ["auth:sanctum"]], function(){
-    Route::post("/logout", [AuthController::class, "logout"]);
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Authenticated Only)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Authenticated user
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/logout', [AuthController::class, 'logout']);
+
 });
 
-Route::post('/employees', [EmployeeController::class, 'store']);
-Route::get('/employees', [EmployeeController::class, 'index']);
-Route::get('/employees/{id}', [EmployeeController::class, 'show']);
-Route::put('/employees/{id}', [EmployeeController::class, 'update']);
-Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+// Employees CRUD
+Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('/', 'store');
+    Route::get('/{id}', 'show');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
+});

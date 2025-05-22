@@ -6,8 +6,11 @@ import {
   RegisterFormSchema,
   RegisterFormType,
 } from "@/lib/schemas/SignUpFormSchema";
-import { useRouter } from "next/router";
-
+import {
+  LoginFormSchema,
+  LoginFormType,
+} from "@/lib/schemas/SignInFormSchema";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +18,25 @@ import { PasswordInput } from "./password-input";
 import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
 import React from "react";
 import axios from "axios";
-export const csrf = () => axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
+
+import Cookies from "js-cookie"; // npm install js-cookie
+
+const setAxiosCsrfToken = () => {
+  const token = Cookies.get("XSRF-TOKEN");
+  if (token) {
+    axios.defaults.headers.common["X-XSRF-TOKEN"] = decodeURIComponent(token);
+  }
+};
+
+
 const API_URL = "http://localhost:8000";
+
+export const csrf = () =>
+axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
 
 interface AuthFormProps {
   type: "signup" | "login" | "forgot-password" | "reset-password";
-  onSubmit: (data: any) => void;
+  onSubmit?: (data: any) => void; // Optional, default fallback ke internal handler
   onBack?: () => void;
   title?: string;
   subtitle?: string;
@@ -33,21 +49,22 @@ export function AuthForm({
   title,
   subtitle,
 }: AuthFormProps) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
-  } = useForm<RegisterFormType>({
-    resolver: zodResolver(RegisterFormSchema),
+  } = useForm<RegisterFormType | LoginFormType>({
+    resolver: zodResolver(type === "signup" ? RegisterFormSchema : LoginFormSchema),
   });
 
+  const [isAgreed, setIsAgreed] = React.useState(false);
   const isSignup = type === "signup";
   const isLogin = type === "login";
   const isForgot = type === "forgot-password";
   const isReset = type === "reset-password";
-
-  const [isAgreed, setIsAgreed] = React.useState(false);
+  
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const titles = {
     login: "Admin Sign In",
@@ -56,50 +73,68 @@ export function AuthForm({
     "reset-password": "Set New Password",
   };
 
-  // const submitForm = (data: RegisterFormType) => {
-  //   if (type === "signup" && !isAgreed) return;
-  //   onSubmit(data);
-  // };
+  // Fungsi submit utama berdasarkan type
+  const submitForm = (data: RegisterFormType | LoginFormType) => {
+    console.log("Submit Form triggered with data:", data);
+    if (type === "login") return handleLogin(data);
+    if (type === "signup") return handleSignup(data);
+    if (onSubmit) return onSubmit(data);
+    console.log("Unhandled submit type", type);
+  };
 
-  const submitForm = async (data: RegisterFormType) => {
+  // Fungsi handle login
+  const handleLogin = async (data: LoginFormType) => {
+    setIsLoading(true);
     try {
       await csrf();
-
-      if (type === "signup") {
-        const res = await axios.post(
-          `${API_URL}/api/signup`,
-          {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            password: data.password,
-            password_confirmation: data.confirmPassword,
-          },
-          { withCredentials: true }
-        );
-
-        console.log("Signup success", res.data);
-      }
-
-      if (type === "login") {
-        const res = await axios.post(
-          `${API_URL}/api/login`,
-          {
-            email: data.email,
-            password: data.password,
-          },
-          { withCredentials: true }
-        );
-
-        console.log("Login success", res.data);
-        window.location.href = "/dashboard";
-      }
-    } catch (err: any) {
-      console.error("Auth failed", err);
+      setAxiosCsrfToken(); 
+      const res = await axios.post(
+        `${API_URL}/api/login`,
+        { email: data.email, password: data.password },
+        { withCredentials: true }
+      );
+      localStorage.setItem("token", res.data.token);
+      console.log("Login success", res.data);
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login error", error.response?.data || error.message);
+      alert("Login failed: " + (error.response?.data?.message || "Unknown error"));
+    } finally {
+      setIsLoading(false);
     }
   };
 
 
+  // Fungsi handle signup
+  const handleSignup = async (data: RegisterFormType) => {
+    if (!isAgreed) {
+      alert("Please agree to the terms");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await csrf();
+      setAxiosCsrfToken(); 
+      const res = await axios.post(
+        `${API_URL}/api/signup`,
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password,
+          password_confirmation: data.confirmPassword,
+        },
+        { withCredentials: true }
+      );
+      console.log("Signup success", res.data);
+      router.push("/auth/login");
+    } catch (error: any) {
+      console.error("Signup error", error.response?.data || error.message);
+      alert("Signup failed: " + (error.response?.data?.message || "Unknown error"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <form
@@ -260,10 +295,13 @@ export function AuthForm({
 
         {}
         <Button
+          disabled={isLoading}
           type="submit"
           className="text-white font-medium bg-[var(--color-primary-900)] hover:bg-[var(--color-primary-700)]"
         >
-          {isLogin
+          {isLoading
+            ? "Loading..."
+            : isLogin
             ? "Sign in"
             : isSignup
             ? "Sign up"

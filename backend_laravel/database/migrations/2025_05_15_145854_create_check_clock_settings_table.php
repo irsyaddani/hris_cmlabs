@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('check_clock_settings', function (Blueprint $table) {
             $table->id();
-            $table->time('clockIn');
-            $table->time('clockOut');
-            $table->time('breakStart');
-            $table->time('breakEnd');
+            $table->foreignId('company_id')->nullable()->constrained()->onDelete('cascade');           
+            $table->time('clockIn')->nullable();
+            $table->time('clockOut')->nullable();
+            $table->time('breakStart')->nullable();
+            $table->time('breakEnd')->nullable();
             $table->timestamps();
         });
     }

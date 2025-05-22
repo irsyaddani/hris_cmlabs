@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\Employee;
+use App\Models\Checkclock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -39,6 +39,14 @@ class AuthController extends Controller
         $company = Company::create([
             'companyName' => $request->companyName ?? null,
         ]);
+        
+        $checkclock = Checkclock::create([
+            'clockIn' => $request->clockIn ?? null,
+            'clockOut' => $request->clockOut ?? null,
+            'breakStart' => $request->breakStart ?? null,
+            'breakEnd' => $request->breakEnd ?? null,
+            'company_id'  => $company->id,
+        ]);
 
         $employee = Employee::create([
             'firstName' => $request->firstName,
@@ -58,7 +66,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -66,6 +73,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Gunakan guard 'web' atau default jika tidak ada guard khusus
         if (!Auth::attempt($credentials)) {
             return response()->json([
                 'message' => 'Invalid credentials',
@@ -73,6 +81,10 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+
+        // Hapus token lama jika perlu (optional)
+        // $user->tokens()->delete();
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -81,4 +93,17 @@ class AuthController extends Controller
             'user'    => $user,
         ]);
     }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user(); // user dari token saat ini
+
+        // Hapus token saat ini (dari header Authorization)
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful',
+        ]);
+    }
+
 }
