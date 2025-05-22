@@ -13,10 +13,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post("/signup", [AuthController::class, "signup"]);
 Route::post("/login", [AuthController::class, "login"]);
-Route::post('/employees', [EmployeeController::class, 'store']);
-
 Route::group(["middleware" => ["auth:sanctum"]], function(){
     Route::post("/logout", [AuthController::class, "logout"]);
 });
 
-Route::get('/check-clocks', [CheckClockController::class, 'index']);
+Route::post('/employees', [EmployeeController::class, 'store']);
+Route::get('/employees', [EmployeeController::class, 'index']);
+Route::get('/employees/{id}', [EmployeeController::class, 'show']);
+Route::put('/employees/{id}', [EmployeeController::class, 'update']);
+Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);

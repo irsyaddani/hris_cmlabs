@@ -2,6 +2,7 @@
 
 import { Row } from "@tanstack/react-table";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +24,40 @@ export function DataTableRowActions<TData>({
   row,
   variant,
 }: DataTableRowActionsProps<TData>) {
+  const router = useRouter();
+  const id = (row.original as any).id;
   const detailsHref =
     variant === "employment"
-      ? "/dashboard/employment/employee-details"
-      : "/dashboard/employment/checkclock-details";
+      ? `/dashboard/employment/employee-details/${id}`
+      : `/dashboard/employment/checkclock-details/${id}`;
+
+async function handleDelete() {
+  if (!confirm("Yakin ingin menghapus data ini?")) return;
+
+  try {
+    const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        // Tambahkan Authorization kalau Laravel kamu pakai Sanctum/Bearer Token
+        // "Authorization": "Bearer TOKEN_KAMU"
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      alert("Gagal menghapus: " + errorText);
+      return;
+    }
+
+    alert("Data berhasil dihapus");
+    router.refresh();
+  } catch (error) {
+    alert("Terjadi kesalahan saat menghapus data");
+    console.error("Delete error:", error);
+  }
+}
+
 
   return (
     <DropdownMenu>
@@ -45,7 +76,10 @@ export function DataTableRowActions<TData>({
         <Link href={detailsHref}>
           <DropdownMenuItem>Details</DropdownMenuItem>
         </Link>
-        <DropdownMenuItem className="text-[var(--color-danger-main)] hover:text-[var(--color-danger-hover)]">
+        <DropdownMenuItem
+          onClick={handleDelete}
+          className="text-[var(--color-danger-main)] hover:text-[var(--color-danger-hover)] cursor-pointer"
+        >
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
