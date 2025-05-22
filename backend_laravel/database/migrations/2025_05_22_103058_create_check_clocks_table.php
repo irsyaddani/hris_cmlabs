@@ -14,8 +14,16 @@ return new class extends Migration
         Schema::create('check_clocks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_employee')->constrained('employees')->onDelete('cascade');
-            $table->enum('check_clock_type', ['clock_in', 'clock_out', 'break_start', 'break_end']);
-            $table->timestamp('check_clock_time');
+            $table->enum('type', ['wfo', 'wfh', 'sick', 'annual leave', 'permit']);
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->dateTime('clock_in')->nullable();
+            $table->dateTime('clock_out')->nullable();
+            $table->text('reason')->nullable();
+            $table->string('file')->nullable(); // jika file berupa path, gunakan string
+            $table->enum('status_approval', ['reject', 'accept'])->nullable();
+            $table->decimal('latitude', 18, 15)->nullable();
+            $table->decimal('longitude', 18, 15)->nullable();
             $table->timestamps();
         });
     }
