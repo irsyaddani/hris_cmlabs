@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Checkclock;
+use App\Models\CheckclockSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -40,7 +41,7 @@ class AuthController extends Controller
             'companyName' => $request->companyName ?? null,
         ]);
         
-        $checkclock = Checkclock::create([
+        $checkclocksetting = CheckclockSetting::create([
             'clockIn' => $request->clockIn ?? null,
             'clockOut' => $request->clockOut ?? null,
             'breakStart' => $request->breakStart ?? null,
@@ -48,15 +49,15 @@ class AuthController extends Controller
             'company_id'  => $company->id,
         ]);
 
-        $employee = Employee::create([
-            'firstName' => $request->firstName,
-            'lastName'  => $request->lastName,
-        ]);
-
         $user = User::create([
             'email'       => $request->email,
             'password'    => Hash::make($request->password),
-            'employee_id' => $employee->id,
+        ]);
+        
+        $employee = Employee::create([
+            'firstName' => $request->firstName,
+            'lastName'  => $request->lastName,
+            'user_id'  => $user->id,
             'company_id'  => $company->id,
         ]);
 

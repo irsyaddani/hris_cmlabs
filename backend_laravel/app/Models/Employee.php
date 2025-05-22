@@ -12,8 +12,9 @@ class Employee extends Model
     protected $table = 'employees';
 
     protected $fillable = [
-        'id_employee',
-        'id_ck_settings',
+        // 'id_employee',
+        'company_id',
+        'user_id',
         'firstName',
         'lastName',
         'mobileNumber',
