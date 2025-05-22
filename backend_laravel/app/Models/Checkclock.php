@@ -1,23 +1,27 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class CheckClock extends Model
+class Checkclock extends Model
 {
     use HasFactory;
 
+    protected $table = 'check_clock_settings';
+
     protected $fillable = [
-        'id_user',
-        'check_clock_type',
-        'check_clock_time',
+        'clockIn',
+        'clockOut',
+        'breakStart',
+        'breakEnd',
+        'company_id',
     ];
 
-    public function user()
+    public function company()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(Company::class);
     }
-}
 
-?>
+}
