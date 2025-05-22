@@ -13,6 +13,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, React.InputHTMLAttribu
       <div className="relative">
         <Input
           type={showPassword ? "text" : "password"}
+          placeholder="Enter password"
           ref={ref}
           {...props}
         />
@@ -21,7 +22,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, React.InputHTMLAttribu
           onClick={() => setShowPassword(!showPassword)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         >
-          {showPassword ? <IconEye /> : <IconEyeClosed />}
+          {/* {showPassword ? <IconEye /> : <IconEyeClosed />} */}
         </button>
       </div>
     );

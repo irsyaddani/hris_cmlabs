@@ -1,10 +1,10 @@
-// app/employee/add/page.tsx
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
 import { z } from "zod";
+import { useState } from "react";
 
 import { DatePickerField } from "@/components/form/date-picker-field";
 import { FormSection } from "@/components/form/form-section";
@@ -38,9 +38,55 @@ export default function AddNewEmployeePage() {
     },
   });
 
-  const onSubmit = (data: EmployeeFormValues) => {
-    console.log("Form submitted:", data);
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+const onSubmit = async (data: EmployeeFormValues) => {
+  setLoading(true);
+  setError(null);
+  setSuccess(null);
+
+  try {
+    const response = await fetch("http://localhost:8000/api/employees", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...data,
+        birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
+        joinDate: data.joinDate?.toISOString().split("T")[0],
+      }),
+    });
+
+    const text = await response.text();
+    console.log("Raw response text:", text);
+
+    try {
+      const json = JSON.parse(text);
+
+      if (!response.ok) {
+        console.error("Backend validation error or other:", json);
+        setError(json.message || "Gagal menyimpan data.");
+        return;
+      }
+
+      setSuccess("Data karyawan berhasil disimpan!");
+      form.reset();
+    } catch (jsonError) {
+      console.error("Response is not valid JSON:", jsonError);
+      setError("Respons server tidak valid JSON.");
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
+    setError("Terjadi kesalahan saat mengirim data.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
@@ -92,7 +138,11 @@ export default function AddNewEmployeePage() {
                   ]}
                 />
                 <TextField label="Email" name="email" type="email" required />
-                <TextField label="Mobile Number" name="mobileNumber" required />
+                <TextField
+                  label="Mobile Number"
+                  name="mobileNumber"
+                  required
+                />
               </div>
             </div>
           </FormSection>
@@ -182,13 +232,21 @@ export default function AddNewEmployeePage() {
             </div>
           </FormSection>
 
+          {error && (
+            <p className="text-red-600 text-sm font-medium">{error}</p>
+          )}
+          {success && (
+            <p className="text-green-600 text-sm font-medium">{success}</p>
+          )}
+
           <div className="flex justify-end">
             <Button
               type="submit"
               size="lg"
+              disabled={loading}
               className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
             >
-              Simpan
+              {loading ? "Menyimpan..." : "Simpan"}
             </Button>
           </div>
         </form>
