@@ -15,13 +15,13 @@ class Company extends Model
         'company_name',
     ];
 
-    public function users()
+    public function employee()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Employee::class);
     }
 
-    public function checkclock()
+    public function checkclocksetting()
     {
-        return $this->hasMany(Checkclock::class);
+        return $this->hasMany(CheckclockSetting::class);
     }
 }

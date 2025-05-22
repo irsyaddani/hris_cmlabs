@@ -52,9 +52,4 @@ class User extends Authenticatable
         return $this->belongsTo(Employee::class);
     }
 
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
-
 }

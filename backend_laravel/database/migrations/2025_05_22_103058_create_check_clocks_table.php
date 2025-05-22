@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('check_clocks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
+            $table->foreignId('id_employee')->constrained('employees')->onDelete('cascade');
             $table->enum('check_clock_type', ['clock_in', 'clock_out', 'break_start', 'break_end']);
             $table->timestamp('check_clock_time');
             $table->timestamps();
