@@ -15,7 +15,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { DateRangePicker } from "../date-range-picker";
+import { SettingsSheet } from "../dialog-sheet";
 
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
@@ -100,20 +100,16 @@ export function DataTableToolbar<TData>({
               className="h-9 w-[250px]"
               variant="outline"
             /> */}
-            {/* <DateRangePicker
-              triggerSize="sm"
-              triggerClassName="ml-auto w-56 sm:w-60 mr-1"
-              className="dark:bg-background/95 dark:backdrop-blur-md dark:supports-[backdrop-filter]:bg-background/50"
-              align="end"
-            /> */}
-            <Button
-              size="default"
-              variant="outline"
-              className="gap-2 hover:bg-[var(--color-neutral-200)]"
-            >
-              <IconSettings className="h-4 w-4" />
-              Settings
-            </Button>
+            <SettingsSheet>
+              <Button 
+                size="default"
+                variant="outline"
+                className="gap-2 hover:bg-[var(--color-neutral-200)]"
+              >
+                <IconSettings className="h-4 w-4" />
+                Settings
+              </Button>
+            </SettingsSheet>
           </>
         )}
 
