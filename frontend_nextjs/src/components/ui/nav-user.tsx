@@ -26,6 +26,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+import { useRouter } from "next/navigation";
+import axios from "axios";
+
 export function NavUser({
   user,
 }: {
@@ -36,6 +39,30 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.post(
+        "http://localhost:8000/api/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      localStorage.removeItem("token"); // hapus token di client
+      router.push("/auth/login"); // redirect ke login
+    } catch (error: any) {
+      console.error("Logout gagal:", error.response?.data || error.message);
+      alert("Logout gagal: " + (error.response?.data?.message || "Unknown error"));
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -98,7 +125,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

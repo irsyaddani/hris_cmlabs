@@ -29,16 +29,16 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Employees CRUD
+    Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
 
-});
-
-// Employees CRUD
-Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::post('/', 'store');
-    Route::get('/{id}', 'show');
-    Route::put('/{id}', 'update');
-    Route::delete('/{id}', 'destroy');
 });
 
 Route::get('/checkclocks', [CheckClockController::class, 'index']);
