@@ -22,6 +22,6 @@ class Company extends Model
 
     public function checkclocksetting()
     {
-        return $this->hasMany(CheckclockSetting::class);
+        return $this->belongsTo(CheckclockSetting::class);
     }
 }
