@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\Api\CheckClockController;
+use App\Http\Controllers\CheckClockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,3 +40,6 @@ Route::prefix('/employees')->controller(EmployeeController::class)->group(functi
     Route::put('/{id}', 'update');
     Route::delete('/{id}', 'destroy');
 });
+
+Route::get('/checkclocks', [CheckClockController::class, 'index']);
+

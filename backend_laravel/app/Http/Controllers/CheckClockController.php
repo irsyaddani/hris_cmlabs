@@ -1,52 +1,66 @@
 <?php
-namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
+namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
+use App\Models\CheckClock;
+use App\Models\Employee;
+use Carbon\Carbon;
 
 class CheckClockController extends Controller
 {
     public function index()
     {
-        $data = DB::table('check_clocks as cc')
-            ->select(
-                'cc.id_user',
-                'users.name',
-                'users.position',
-                DB::raw("DATE(cc.check_clock_time) as date"),
-                DB::raw("MAX(CASE WHEN cc.check_clock_type = 'clock_in' THEN cc.check_clock_time END) as clock_in"),
-                DB::raw("MAX(CASE WHEN cc.check_clock_type = 'clock_out' THEN cc.check_clock_time END) as clock_out")
-            )
-            ->join('users', 'users.id', '=', 'cc.id_user')
-            ->groupBy('cc.id_user', DB::raw("DATE(cc.check_clock_time)"))
-            ->get();
-
-        $mapped = $data->map(function ($item) {
-            $clockIn = $item->clock_in ? Carbon::parse($item->clock_in) : null;
-            $clockOut = $item->clock_out ? Carbon::parse($item->clock_out) : null;
-
-            $workHours = $clockIn && $clockOut ? $clockOut->diffInMinutes($clockIn) / 60 : 0;
-
-            $status = 'no-show';
-            if ($clockIn) {
-                $status = $clockIn->hour > 8 || ($clockIn->hour == 8 && $clockIn->minute > 0) ? 'late' : 'on time';
+        $data = CheckClock::with('employee')->get()->map(function ($item) {
+            $employee = $item->employee ?? null;
+    
+            $fullName = '-';
+            if ($employee) {
+                $firstName = $employee->firstName ?? '';
+                $lastName = $employee->lastName ?? '';
+                $fullName = trim($firstName . ' ' . $lastName);
+                if ($fullName === '') {
+                    $fullName = '-';
+                }
             }
+            $workTime = $this->calculateWorkHours($item->clock_in, $item->clock_out);
+$workHoursString = "{$workTime['hours']}.{$workTime['minutes']}";
 
             return [
-                'user_id' => $item->id_user,
-                'name' => $item->name,
-                'position' => $item->position,
-                'date' => $item->date,
-                'clock_in' => $item->clock_in,
-                'clock_out' => $item->clock_out,
-                'work_hours' => round($workHours, 2),
-                'status' => $status,
+                'name' => $fullName,
+                'avatarUrl' => $employee?->avatar_url ?? 'https://yourcdn.com/avatars/default.jpg',
+                'position' => $employee->position ?? '-',
+                'clockIn' => $item->clock_in ? $item->clock_in->format('Y-m-d H:i:s') : null,
+                'clockOut' => $item->clock_out ? $item->clock_out->format('Y-m-d H:i:s') : null,
+                'workHours' => $workHoursString,
+                'approval' => $item->status_approval ?? '-',
+                'status' => $item->type,
             ];
         });
-
-        return response()->json($mapped);
+    
+        return response()->json(['data' => $data]);
     }
+    
+
+
+    private function calculateWorkHours($clockIn, $clockOut)
+    {
+        if (!$clockIn || !$clockOut) return ['hours' => 0, 'minutes' => 0];
+    
+        $start = Carbon::parse($clockIn);
+        $end = Carbon::parse($clockOut);
+    
+        if ($end->lessThanOrEqualTo($start)) {
+            return ['hours' => 0, 'minutes' => 0];
+        }
+    
+        $diffMinutes = $start->diffInMinutes($end);
+    
+        $hours = intdiv($diffMinutes, 60);        // hitung jam utuh
+        $minutes = ($diffMinutes % 60);              // sisa menit
+    
+        return ['hours' => $hours, 'minutes' => $minutes];
+    }
+    
+
 }
-?>
