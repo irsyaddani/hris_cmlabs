@@ -205,10 +205,16 @@ export function AuthForm({
                 id="email"
                 type="email"
                 placeholder="m@example.com"
-                {...register("identifier")}
+                {...register(isLogin ? "identifier" : "email")}
               />
-              {errors.identifier && (
-                <p className="text-sm text-red-500">{errors.identifier.message}</p>
+              {isLogin ? (
+                errors.identifier && (
+                  <p className="text-sm text-red-500">{errors.identifier.message}</p>
+                )
+              ) : (
+                errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )
               )}
             </div>
           )}
