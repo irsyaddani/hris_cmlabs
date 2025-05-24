@@ -72,29 +72,49 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
+            'identifier' => 'required|string',
+            'password'   => 'required|string',
         ]);
 
-        // Gunakan guard 'web' atau default jika tidak ada guard khusus
-        if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'Invalid credentials',
-            ], 401);
+        $identifier = $credentials['identifier'];
+        $password = $credentials['password'];
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $identifier)->first();
+
+            if ($user && Hash::check($password, $user->password)) {
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                return response()->json([
+                    'message' => 'Login via email sukses',
+                    'token'   => $token,
+                    'user'    => $user,
+                ]);
+            }
+        } else {
+            $employee = Employee::where('employee_code', $identifier)->first();
+
+            if ($employee && $employee->user) {
+                $user = $employee->user;
+
+                if (Hash::check($password, $user->password)) {
+                    $token = $user->createToken('auth_token')->plainTextToken;
+
+                    $isDefaultPassword = Hash::check($employee->employee_code, $user->password);
+
+                    return response()->json([
+                        'message'              => 'Login via employee id sukses',
+                        'token'                => $token,
+                        'user'                 => $user,
+                        'need_reset_password'  => $isDefaultPassword,
+                    ]);
+                }
+            }
         }
-
-        $user = Auth::user();
-
-        // Hapus token lama jika perlu (optional)
-        // $user->tokens()->delete();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
+        
         return response()->json([
-            'message' => 'Login successful',
-            'token'   => $token,
-            'user'    => $user,
-        ]);
+            'message' => 'Login gagal.',
+        ], 401);
     }
 
     public function logout(Request $request)

@@ -2,40 +2,24 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  RegisterFormSchema,
-  RegisterFormType,
-} from "@/lib/schemas/SignUpFormSchema";
-import {
-  LoginFormSchema,
-  LoginFormType,
-} from "@/lib/schemas/SignInFormSchema";
+import  {RegisterFormSchema, RegisterFormType } from "@/lib/schemas/SignUpFormSchema";
+import { LoginFormSchema, LoginFormType } from "@/lib/schemas/SignInFormSchema";
+import { IdLoginFormSchema, IdLoginFormType } from "@/lib/schemas/SignInIdFormSchema";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
 import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
+import { useEffect } from "react";
+
 import React from "react";
 import axios from "axios";
 
-import Cookies from "js-cookie"; // npm install js-cookie
-
-const setAxiosCsrfToken = () => {
-  const token = Cookies.get("XSRF-TOKEN");
-  if (token) {
-    axios.defaults.headers.common["X-XSRF-TOKEN"] = decodeURIComponent(token);
-  }
-};
-
-
 const API_URL = "http://localhost:8000";
 
-export const csrf = () =>
-axios.get(`${API_URL}/sanctum/csrf-cookie`, { withCredentials: true });
-
 interface AuthFormProps {
-  type: "signup" | "login" | "forgot-password" | "reset-password";
+  type: "signup" | "login" | "idlogin" | "forgot-password" | "reset-password";
   onSubmit?: (data: any) => void; // Optional, default fallback ke internal handler
   onBack?: () => void;
   title?: string;
@@ -50,33 +34,56 @@ export function AuthForm({
   subtitle,
 }: AuthFormProps) {
   const router = useRouter();
+  const getSchema = () => {
+    switch (type) {
+      case "signup":
+        return RegisterFormSchema;
+      case "login":
+        return LoginFormSchema;
+      case "idlogin":
+        return IdLoginFormSchema;
+      // Tambahkan jika punya schema reset/forgot
+      default:
+        return LoginFormSchema;
+    }
+  };
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormType | LoginFormType>({
-    resolver: zodResolver(type === "signup" ? RegisterFormSchema : LoginFormSchema),
+  } = useForm<any>({
+    resolver: zodResolver(getSchema()),
   });
 
   const [isAgreed, setIsAgreed] = React.useState(false);
   const isSignup = type === "signup";
   const isLogin = type === "login";
+  const isIdLogin = type === "idlogin";
   const isForgot = type === "forgot-password";
   const isReset = type === "reset-password";
   
   const [isLoading, setIsLoading] = React.useState(false);
 
   const titles = {
-    login: "Admin Sign In",
+    login: "Sign In with Email",
+    idlogin: "Sign In with Employee ID",
     signup: "Admin Sign Up",
     "forgot-password": "Forgot Password",
     "reset-password": "Set New Password",
   };
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
   // Fungsi submit utama berdasarkan type
-  const submitForm = (data: RegisterFormType | LoginFormType) => {
+  const submitForm = (data: RegisterFormType | LoginFormType | IdLoginFormType) => {
     console.log("Submit Form triggered with data:", data);
     if (type === "login") return handleLogin(data);
+    if (type === "idlogin") return handleLogin(data);
     if (type === "signup") return handleSignup(data);
     if (onSubmit) return onSubmit(data);
     console.log("Unhandled submit type", type);
@@ -86,11 +93,9 @@ export function AuthForm({
   const handleLogin = async (data: LoginFormType) => {
     setIsLoading(true);
     try {
-      await csrf();
-      setAxiosCsrfToken(); 
       const res = await axios.post(
         `${API_URL}/api/login`,
-        { email: data.email, password: data.password },
+        { identifier: data.identifier, password: data.password },
         { withCredentials: true }
       );
       localStorage.setItem("token", res.data.token);
@@ -101,7 +106,7 @@ export function AuthForm({
       alert("Login failed: " + (error.response?.data?.message || "Unknown error"));
     } finally {
       setIsLoading(false);
-    }
+    } 
   };
 
 
@@ -113,8 +118,6 @@ export function AuthForm({
     }
     setIsLoading(true);
     try {
-      await csrf();
-      setAxiosCsrfToken(); 
       const res = await axios.post(
         `${API_URL}/api/signup`,
         {
@@ -195,22 +198,37 @@ export function AuthForm({
             </div>
           )}
 
-          {!isReset && (
+          {!isReset && !isIdLogin && (
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="m@example.com"
-                {...register("email")}
+                {...register("identifier")}
               />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
+              {errors.identifier && (
+                <p className="text-sm text-red-500">{errors.identifier.message}</p>
               )}
             </div>
           )}
 
-          {(isLogin || isSignup || isReset) && (
+          {isIdLogin && (
+            <div className="grid gap-2">
+              <Label htmlFor="employee_code">Employee ID</Label>
+              <Input
+                id="employee_code"
+                type="text"
+                placeholder="EM12345"
+                {...register("identifier")}
+              />
+              {errors.identifier && (
+                <p className="text-sm text-red-500">{errors.identifier.message}</p>
+              )}
+            </div>
+          )}
+
+          {(isLogin || isIdLogin || isSignup || isReset) && (
             <div className="grid gap-2">
               <Label htmlFor="password">
                 {isReset ? "New Password" : "Password"}
@@ -267,7 +285,7 @@ export function AuthForm({
             </div>
           )}
 
-          {isLogin && (
+          {(isLogin || isIdLogin) && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <input
@@ -305,6 +323,8 @@ export function AuthForm({
             ? "Sign in"
             : isSignup
             ? "Sign up"
+            : isIdLogin
+            ? "Sign in"
             : isForgot
             ? "Send link"
             : "Reset password"}
@@ -312,7 +332,7 @@ export function AuthForm({
 
         {/* Social/Auth Extras */}
         <div className="flex flex-col gap-4">
-          {(isLogin || isSignup) && (
+          {(isLogin || isIdLogin || isSignup) && (
             <>
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -321,6 +341,7 @@ export function AuthForm({
               </div>
 
               <Button
+                type="button"
                 variant="outline"
                 className="w-full flex items-center gap-2"
                 onClick={() =>
@@ -357,12 +378,31 @@ export function AuthForm({
 
           {isLogin && (
             <Button
+              type="button"
               variant="outline"
               className="w-full"
-              onClick={() => console.log("Sign In with Employee ID")}
+              onClick={() => {
+                router.push("/auth/id-login")
+                console.log("Sign In with Employee ID")
+              }}
             >
               <IconUserCircle />
               Sign In with Employee ID
+            </Button>
+          )}
+
+          {isIdLogin && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                router.push("/auth/login")
+                console.log("Sign In with Employee ID")
+              }}
+            >
+              <IconUserCircle />
+              Sign In with Email
             </Button>
           )}
 
@@ -375,7 +415,7 @@ export function AuthForm({
             </div>
           )}
 
-          {isLogin && (
+          {(isLogin || isIdLogin) && (
             <div className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account yet?{" "}
               <a href="/auth/signup" className="text-black">
