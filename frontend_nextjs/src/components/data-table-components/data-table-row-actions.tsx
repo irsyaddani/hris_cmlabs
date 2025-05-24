@@ -31,32 +31,33 @@ export function DataTableRowActions<TData>({
       ? `/dashboard/employment/employee-details/${id}`
       : `/dashboard/employment/checkclock-details/${id}`;
 
-async function handleDelete() {
-  if (!confirm("Yakin ingin menghapus data ini?")) return;
+  async function handleDelete() {
+    if (!confirm("Yakin ingin menghapus data ini?")) return;
+    
+    const token = localStorage.getItem("token");
 
-  try {
-    const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        // Tambahkan Authorization kalau Laravel kamu pakai Sanctum/Bearer Token
-        // "Authorization": "Bearer TOKEN_KAMU"
-      },
-    });
+    try {
+      const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      alert("Gagal menghapus: " + errorText);
-      return;
+      if (!res.ok) {
+        const errorText = await res.text();
+        alert("Gagal menghapus: " + errorText);
+        return;
+      }
+
+      alert("Data berhasil dihapus");
+      router.refresh();
+    } catch (error) {
+      alert("Terjadi kesalahan saat menghapus data");
+      console.error("Delete error:", error);
     }
-
-    alert("Data berhasil dihapus");
-    router.refresh();
-  } catch (error) {
-    alert("Terjadi kesalahan saat menghapus data");
-    console.error("Delete error:", error);
   }
-}
 
 
   return (

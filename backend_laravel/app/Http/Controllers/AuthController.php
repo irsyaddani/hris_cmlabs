@@ -52,6 +52,7 @@ class AuthController extends Controller
         $user = User::create([
             'email'       => $request->email,
             'password'    => Hash::make($request->password),
+            'company_id'  => $company->id,
         ]);
         
         $employee = Employee::create([
@@ -59,6 +60,7 @@ class AuthController extends Controller
             'lastName'  => $request->lastName,
             'user_id'  => $user->id,
             'company_id'  => $company->id,
+            'level'       => 'admin',
         ]);
 
         return response()->json([

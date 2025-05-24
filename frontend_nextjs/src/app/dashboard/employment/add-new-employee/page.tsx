@@ -11,10 +11,13 @@ import { FormSection } from "@/components/form/form-section";
 import { SelectField } from "@/components/form/select-field";
 import { TextField } from "@/components/form/text-field";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function AddNewEmployeePage() {
+  const router = useRouter();
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
@@ -41,17 +44,21 @@ export default function AddNewEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-const onSubmit = async (data: EmployeeFormValues) => {
-  setLoading(true);
-  setError(null);
-  setSuccess(null);
-
-  try {
+  
+  const onSubmit = async (data: EmployeeFormValues) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+    const token = localStorage.getItem('token');
+    
     const response = await fetch("http://localhost:8000/api/employees", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         ...data,
@@ -59,7 +66,7 @@ const onSubmit = async (data: EmployeeFormValues) => {
         joinDate: data.joinDate?.toISOString().split("T")[0],
       }),
     });
-
+    
     const text = await response.text();
     console.log("Raw response text:", text);
 
@@ -73,11 +80,13 @@ const onSubmit = async (data: EmployeeFormValues) => {
       }
 
       setSuccess("Data karyawan berhasil disimpan!");
+      router.push("/dashboard/employment/");
       form.reset();
     } catch (jsonError) {
       console.error("Response is not valid JSON:", jsonError);
       setError("Respons server tidak valid JSON.");
     }
+    
   } catch (err) {
     console.error("Fetch error:", err);
     setError("Terjadi kesalahan saat mengirim data.");
@@ -85,8 +94,6 @@ const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(false);
   }
 };
-
-
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">

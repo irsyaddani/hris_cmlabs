@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface Employee {
-  id: string;
+  id: string,
+  employee_code: string;
   firstName: string;
   lastName: string;
-  email: string;
+  user: {
+      email: string;
+  };
   mobileNumber: string;
   birthPlace: string;
   birthDate: string;
@@ -23,15 +27,29 @@ interface Employee {
   grade: string;
   bank: string;
   bankAccountName: string;
-  bankAccountNumber: string;
+  accountNumber: string;
+}
+
+function toTitleCase(str: string) {
+  return str
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 export default function EmployeeDetailsPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [employee, setEmployee] = useState<Employee | null>(null);
-
+  const token = localStorage.getItem('token');
+  
   useEffect(() => {
-    axios.get(`http://localhost:8000/api/employees/${id}`)
+    axios.get(`http://localhost:8000/api/employees/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       .then((res) => {
         setEmployee(res.data.data);
       })
@@ -39,6 +57,23 @@ export default function EmployeeDetailsPage() {
         console.error("Failed to fetch employee:", err);
       });
   }, [id]);
+
+  const handleDelete = async () => {
+    if (!confirm("Apakah Anda yakin ingin menghapus data karyawan ini?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8000/api/employees/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      alert("Data karyawan berhasil dihapus.");
+      router.push("/dashboard/employment");
+    } catch (error) {
+      console.error("Gagal menghapus data karyawan:", error);
+      alert("Terjadi kesalahan saat menghapus data.");
+    }
+  };
 
   if (!employee) return <p className="p-6">Loading...</p>;
 
@@ -55,16 +90,16 @@ export default function EmployeeDetailsPage() {
                 {employee.firstName} {employee.lastName}
               </h2>
               <div className="w-2 h-2 bg-gray-200 rounded-full shrink-0 hidden sm:block" />
-              <h2 className="text-2xl font-medium">{employee.id}</h2>
+              <h2 className="text-2xl font-medium">{employee.employee_code}</h2>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-6 w-full">
-            <div><p className="text-sm text-muted-foreground">Email</p><p className="text-md font-medium">{employee.email}</p></div>
+            <div><p className="text-sm text-muted-foreground">Email</p><p className="text-md font-medium">{employee.user?.email}</p></div>
             <div><p className="text-sm text-muted-foreground">Mobile Number</p><p className="text-md font-medium">{employee.mobileNumber}</p></div>
             <div><p className="text-sm text-muted-foreground">Birth</p><p className="text-md font-medium">{employee.birthPlace}, {employee.birthDate}</p></div>
-            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{employee.gender}</p></div>
+            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{toTitleCase(employee.gender)}</p></div>
             <div><p className="text-sm text-muted-foreground">NIK</p><p className="text-md font-medium">{employee.nik}</p></div>
-            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{employee.lastEducation}</p></div>
+            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{toTitleCase(employee.lastEducation)}</p></div>
           </div>
         </div>
       </div>
@@ -73,11 +108,11 @@ export default function EmployeeDetailsPage() {
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
         <h3 className="text-md text-muted-foreground mb-6">Employee Information</h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{employee.position}</p></div>
-          <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{employee.employeeType}</p></div>
+          <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{toTitleCase(employee.position)}</p></div>
+          <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{toTitleCase(employee.employeeType)}</p></div>
           <div><p className="text-sm text-muted-foreground">Join Date</p><p className="text-md font-medium">{employee.joinDate}</p></div>
-          <div><p className="text-sm text-muted-foreground">Branch</p><p className="text-md font-medium">{employee.branch}</p></div>
-          <div><p className="text-sm text-muted-foreground">Grade</p><p className="text-md font-medium">{employee.grade}</p></div>
+          <div><p className="text-sm text-muted-foreground">Branch</p><p className="text-md font-medium">{toTitleCase(employee.branch)}</p></div>
+          <div><p className="text-sm text-muted-foreground">Grade</p><p className="text-md font-medium">{toTitleCase(employee.grade)}</p></div>
         </div>
       </div>
 
@@ -85,9 +120,9 @@ export default function EmployeeDetailsPage() {
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
         <h3 className="text-md text-muted-foreground mb-6">Bank Information</h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium">{employee.bank}</p></div>
+          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium uppercase">{toTitleCase(employee.bank)}</p></div>
           <div><p className="text-sm text-muted-foreground">Bank Account Name</p><p className="text-md font-medium">{employee.bankAccountName}</p></div>
-          <div><p className="text-sm text-muted-foreground">Account Number</p><p className="text-md font-medium">{employee.bankAccountNumber}</p></div>
+          <div><p className="text-sm text-muted-foreground">Account Number</p><p className="text-md font-medium">{employee.accountNumber}</p></div>
         </div>
       </div>
 
@@ -96,12 +131,14 @@ export default function EmployeeDetailsPage() {
           variant="destructive"
           size="lg"
           className="gap-4 bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
+          onClick={handleDelete}
         >
           Hapus
         </Button>
         <Button
           size="lg"
           className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+          onClick={() => router.push(`/dashboard/employment/employee-edit/${id}`)}
         >
           Edit
         </Button>

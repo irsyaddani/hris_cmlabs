@@ -21,7 +21,6 @@ class User extends Authenticatable
     protected $fillable = [
         'email',
         'password',
-        'employee_id',
         'company_id',
     ];
 
@@ -50,6 +49,11 @@ class User extends Authenticatable
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
 }

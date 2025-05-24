@@ -12,9 +12,9 @@ class Employee extends Model
     protected $table = 'employees';
 
     protected $fillable = [
-        // 'id_employee',
-        'company_id',
         'user_id',
+        'company_id',
+        'employee_code',
         'firstName',
         'lastName',
         'mobileNumber',
@@ -38,6 +38,10 @@ class Employee extends Model
 
     public function user()
     {
-        return $this->hasOne(User::class);
+        return $this->belongsTo(User::class);
+    }
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 }
