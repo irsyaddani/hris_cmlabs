@@ -263,7 +263,7 @@ class EmployeeController extends Controller
 
     public function destroy($id)
     {
-        $employee = Employee::find($id);
+        $employee = Employee::with('user')->find($id);
 
         if (!$employee) {
             return response()->json([
@@ -272,11 +272,16 @@ class EmployeeController extends Controller
         }
 
         try {
+            if ($employee->user) {
+                $employee->user->delete();
+            }
+
             $employee->delete();
 
             return response()->json([
                 'message' => 'Data karyawan berhasil dihapus.'
             ], 200);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menghapus data.',

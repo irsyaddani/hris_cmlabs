@@ -6,14 +6,6 @@ import { DataTableColumnHeader } from "./data-table-column-header";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 
-function toTitleCase(str: string) {
-  return str
-    .toLowerCase()
-    .split(/[_\s]+/) // split berdasarkan spasi atau underscore
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 export const columns: ColumnDef<Employee>[] = [
   {
     id: "select",
@@ -74,35 +66,35 @@ export const columns: ColumnDef<Employee>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Phone Number" />
     ),
-    cell: ({ row }) => <div>{toTitleCase(row.getValue("phone"))}</div>,
+    cell: ({ row }) => <div>{row.getValue("phone")}</div>,
   },
   {
     accessorKey: "branch",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Branch" />
     ),
-    cell: ({ row }) => <div>{toTitleCase(row.getValue("branch"))}</div>,
+    cell: ({ row }) => <div>{row.getValue("branch")}</div>,
   },
   {
     accessorKey: "position",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Position" />
     ),
-    cell: ({ row }) => <div>{toTitleCase(row.getValue("position"))}</div>,
+    cell: ({ row }) => <div>{row.getValue("position")}</div>,
   },
   {
     accessorKey: "grade",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Grade" />
     ),
-    cell: ({ row }) => <div>{toTitleCase(row.getValue("grade"))}</div>,
+    cell: ({ row }) => <div>{row.getValue("grade")}</div>,
   },
   {
     accessorKey: "status",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => <div>{toTitleCase(row.getValue("status"))}</div>,
+    cell: ({ row }) => <div>{row.getValue("status")}</div>,
   },
   // {
   //   accessorKey: "date",
