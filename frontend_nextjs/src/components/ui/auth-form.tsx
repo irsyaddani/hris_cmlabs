@@ -74,8 +74,12 @@ export function AuthForm({
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
+    const level = localStorage.getItem("userLevel");
+
+    if (token && level === "admin") {
       router.replace("/dashboard");
+    } else if (token && level === "user") {
+      router.replace("/employee-dashboard");
     }
   }, [router]);
 
@@ -95,18 +99,41 @@ export function AuthForm({
     try {
       const res = await axios.post(
         `${API_URL}/api/login`,
-        { identifier: data.identifier, password: data.password },
+        {
+          identifier: data.identifier,
+          password: data.password,
+        },
         { withCredentials: true }
       );
-      localStorage.setItem("token", res.data.token);
-      console.log("Login success", res.data);
-      router.push("/dashboard");
+      
+      const token = res.data.token;
+      localStorage.setItem("token", token);
+
+      const userRes = await axios.get(`${API_URL}/api/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      const level = userRes.data.level;
+      localStorage.setItem("userLevel", level);
+
+      if (level === "admin") {
+        router.push("/dashboard");
+      } else {
+        router.push("/employee-dashboard");
+      }
+
+      console.log("Login success", { token, level });
+      
     } catch (error: any) {
       console.error("Login error", error.response?.data || error.message);
       alert("Login failed: " + (error.response?.data?.message || "Unknown error"));
+
     } finally {
       setIsLoading(false);
     } 
+
   };
 
 

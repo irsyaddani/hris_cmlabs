@@ -6,13 +6,19 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8000";
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+export function AuthGuard({
+  children,
+  allowedRoles,
+}: {
+  children: React.ReactNode;
+  allowedRoles?: string[]; // contoh: ['admin'] atau ['user', 'admin']
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    const verifyToken = async () => {
+    const verify = async () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -22,24 +28,35 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        await axios.get(`${API_URL}/api/user`, {
+        const response = await axios.get(`${API_URL}/api/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setAuthenticated(true);
+
+        const userLevel = response.data.level;
+        localStorage.setItem("userLevel", userLevel);
+
+        if (!allowedRoles || allowedRoles.includes(userLevel)) {
+          setAuthorized(true);
+        } else {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userLevel");
+          router.replace("/auth/login");
+        }
       } catch (err) {
         localStorage.removeItem("token");
+        localStorage.removeItem("userLevel");
         router.replace("/auth/login");
       } finally {
         setLoading(false);
       }
     };
 
-    verifyToken();
-  }, [router]);
+    verify();
+  }, [allowedRoles, router]);
 
-  if (loading) {
+  if (loading) {    
     return (
       <div className="w-full h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -47,7 +64,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!authenticated) return null;
+  if (!authorized) return null;
 
   return <>{children}</>;
 }

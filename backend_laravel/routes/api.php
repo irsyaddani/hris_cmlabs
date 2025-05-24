@@ -26,7 +26,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Authenticated user
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        $employee = $user->employee; // pastikan relasi 'employee' ada di model User
+
+        return response()->json([
+            'id'    => $user->id,
+            'email' => $user->email,
+            'level' => $employee->level ?? null,
+        ]);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     

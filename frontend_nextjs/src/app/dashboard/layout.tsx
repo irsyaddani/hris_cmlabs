@@ -6,7 +6,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppBreadcrumb } from "@/components/ui/app-breadcrum";
-import { AuthGuard } from "./AuthGuard";
+import { AuthGuard } from "../AuthGuard";
 
 export default function DashboardLayout({
   children,
@@ -14,7 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={["admin"]}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
