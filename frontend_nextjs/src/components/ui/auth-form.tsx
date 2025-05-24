@@ -377,9 +377,10 @@ export function AuthForm({
                 type="button"
                 variant="outline"
                 className="w-full flex items-center gap-2"
-                onClick={() =>
-                  console.log(`${isSignup ? "Sign Up" : "Sign In"} with Google`)
-                }
+                onClick={() => {
+                  console.log(`${isSignup ? "Sign Up" : "Sign In"} with Google`);
+                  window.location.href = `http://localhost:8000/auth/google?mode=${isSignup ? "signup" : "login"}`;
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
