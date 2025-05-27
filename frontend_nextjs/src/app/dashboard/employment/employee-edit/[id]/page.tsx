@@ -12,6 +12,7 @@ import { DatePickerField } from "@/components/form/date-picker-field";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
@@ -20,15 +21,22 @@ export default function EditEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
   });
+  
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/employees/${id}`);
+        const res = await axios.get(`http://localhost:8000/api/employees/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         const data = res.data.data;
 
         form.reset({
@@ -39,7 +47,7 @@ export default function EditEmployeePage() {
           nik: data.nik,
           gender: data.gender,
           lastEducation: data.lastEducation,
-          email: data.email,
+          email: data.user?.email,
           mobileNumber: data.mobileNumber,
           position: data.position,
           employeeType: data.employeeType,
@@ -47,7 +55,7 @@ export default function EditEmployeePage() {
           joinDate: new Date(data.joinDate),
           branch: data.branch,
           bank: data.bank,
-          accountNumber: data.bankAccountNumber,
+          accountNumber: data.accountNumber,
           bankAccountName: data.bankAccountName,
         });
       } catch (err) {
@@ -69,6 +77,7 @@ export default function EditEmployeePage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...data,
@@ -85,6 +94,7 @@ export default function EditEmployeePage() {
       }
 
       setSuccess("Data karyawan berhasil diperbarui!");
+      router.push("/dashboard/employment");
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Terjadi kesalahan saat memperbarui data.");

@@ -44,7 +44,6 @@ export function NavUser({
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-
       await axios.post(
         "http://localhost:8000/api/logout",
         {},
@@ -55,12 +54,11 @@ export function NavUser({
           },
         }
       );
-
-      localStorage.removeItem("token"); // hapus token di client
-      router.push("/auth/login"); // redirect ke login
-    } catch (error: any) {
-      console.error("Logout gagal:", error.response?.data || error.message);
-      alert("Logout gagal: " + (error.response?.data?.message || "Unknown error"));
+    } catch (err) {
+      console.warn("Logout error, but continuing to clear token:", err);
+    } finally {
+      localStorage.removeItem("token");
+      router.push("/auth/login");
     }
   };
 
