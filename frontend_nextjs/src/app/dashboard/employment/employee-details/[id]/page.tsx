@@ -31,7 +31,8 @@ export default function EmployeeDetailsPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:8000/api/employees/${id}`)
+    axios
+      .get(`http://localhost:8000/api/employees/${id}`)
       .then((res) => {
         setEmployee(res.data.data);
       })
@@ -46,7 +47,9 @@ export default function EmployeeDetailsPage() {
     <div className="min-h-screen p-6 space-y-5">
       {/* Personal Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Personal Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Personal Information
+        </h3>
         <div className="flex flex-col gap-7">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-16 h-16 bg-gray-400 rounded-full shrink-0" />
@@ -59,25 +62,62 @@ export default function EmployeeDetailsPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-6 w-full">
-            <div><p className="text-sm text-muted-foreground">Email</p><p className="text-md font-medium">{employee.email}</p></div>
-            <div><p className="text-sm text-muted-foreground">Mobile Number</p><p className="text-md font-medium">{employee.mobileNumber}</p></div>
-            <div><p className="text-sm text-muted-foreground">Birth</p><p className="text-md font-medium">{employee.birthPlace}, {employee.birthDate}</p></div>
-            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{employee.gender}</p></div>
-            <div><p className="text-sm text-muted-foreground">NIK</p><p className="text-md font-medium">{employee.nik}</p></div>
-            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{employee.lastEducation}</p></div>
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="text-md font-medium">{employee.email}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Mobile Number</p>
+              <p className="text-md font-medium">{employee.mobileNumber}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Birth</p>
+              <p className="text-md font-medium">
+                {employee.birthPlace}, {employee.birthDate}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Gender</p>
+              <p className="text-md font-medium">{employee.gender}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">NIK</p>
+              <p className="text-md font-medium">{employee.nik}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Education</p>
+              <p className="text-md font-medium">{employee.lastEducation}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Employee Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Employee Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Employee Information
+        </h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{employee.position}</p></div>
-          <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{employee.employeeType}</p></div>
-          <div><p className="text-sm text-muted-foreground">Join Date</p><p className="text-md font-medium">{employee.joinDate}</p></div>
-          <div><p className="text-sm text-muted-foreground">Branch</p><p className="text-md font-medium">{employee.branch}</p></div>
-          <div><p className="text-sm text-muted-foreground">Grade</p><p className="text-md font-medium">{employee.grade}</p></div>
+          <div>
+            <p className="text-sm text-muted-foreground">Position</p>
+            <p className="text-md font-medium">{employee.position}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Employment Type</p>
+            <p className="text-md font-medium">{employee.employeeType}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Join Date</p>
+            <p className="text-md font-medium">{employee.joinDate}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Branch</p>
+            <p className="text-md font-medium">{employee.branch}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Grade</p>
+            <p className="text-md font-medium">{employee.grade}</p>
+          </div>
         </div>
       </div>
 
@@ -85,9 +125,18 @@ export default function EmployeeDetailsPage() {
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
         <h3 className="text-md text-muted-foreground mb-6">Bank Information</h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium">{employee.bank}</p></div>
-          <div><p className="text-sm text-muted-foreground">Bank Account Name</p><p className="text-md font-medium">{employee.bankAccountName}</p></div>
-          <div><p className="text-sm text-muted-foreground">Account Number</p><p className="text-md font-medium">{employee.bankAccountNumber}</p></div>
+          <div>
+            <p className="text-sm text-muted-foreground">Bank</p>
+            <p className="text-md font-medium">{employee.bank}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Bank Account Name</p>
+            <p className="text-md font-medium">{employee.bankAccountName}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Account Number</p>
+            <p className="text-md font-medium">{employee.bankAccountNumber}</p>
+          </div>
         </div>
       </div>
 

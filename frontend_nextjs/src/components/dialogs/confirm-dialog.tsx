@@ -16,10 +16,11 @@ import { ReactNode } from "react";
 interface ConfirmDialogProps {
   trigger: ReactNode;
   title: string;
-  description: ReactNode; // ubah ke ReactNode agar fleksibel
+  description: ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm?: () => void;
+  confirmClassName?: string; // 👈 tambahan
 }
 
 export function ConfirmDialog({
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   confirmText = "Continue",
   cancelText = "Cancel",
   onConfirm,
+  confirmClassName = "",
 }: ConfirmDialogProps) {
   return (
     <AlertDialog>
@@ -40,7 +42,7 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogAction onClick={onConfirm} className={confirmClassName}>
             {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>

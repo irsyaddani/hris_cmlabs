@@ -23,7 +23,9 @@ export default function DashboardLayout({
             <AppBreadcrumb />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 overflow-x-hidden">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

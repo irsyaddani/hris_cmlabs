@@ -15,7 +15,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { SettingsSheet } from "../dialog-sheet";
+import { SettingSheet } from "../setting-sheet";
 
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
@@ -100,8 +100,8 @@ export function DataTableToolbar<TData>({
               className="h-9 w-[250px]"
               variant="outline"
             /> */}
-            <SettingsSheet>
-              <Button 
+            <SettingSheet>
+              <Button
                 size="default"
                 variant="outline"
                 className="gap-2 hover:bg-[var(--color-neutral-200)]"
@@ -109,7 +109,7 @@ export function DataTableToolbar<TData>({
                 <IconSettings className="h-4 w-4" />
                 Settings
               </Button>
-            </SettingsSheet>
+            </SettingSheet>
           </>
         )}
 

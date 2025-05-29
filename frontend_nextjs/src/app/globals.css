@@ -154,6 +154,7 @@
 
 body {
   font-family: Inter;
+  /* overflow-x: hidden; */
 }
 
 .dark {
