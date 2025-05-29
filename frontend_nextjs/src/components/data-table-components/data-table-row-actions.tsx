@@ -25,6 +25,8 @@ export function DataTableRowActions<TData>({
   row,
   variant,
 }: DataTableRowActionsProps<TData>) {
+  // ↑ DIPERBAIKI: Tambahkan { untuk membuka function body
+
   const router = useRouter();
   const [openSheet, setOpenSheet] = useState(false);
 
@@ -34,12 +36,10 @@ export function DataTableRowActions<TData>({
       ? `/dashboard/employment/employee-details?id=${id}`
       : `/dashboard/checkclock?id=${id}`;
 
+  // DIPERBAIKI: Hapus duplikasi function
   async function handleDelete() {
     if (!confirm("Yakin ingin menghapus data ini?")) return;
 
-  async function handleDelete() {
-    if (!confirm("Yakin ingin menghapus data ini?")) return;
-    
     const token = localStorage.getItem("token");
 
     try {
@@ -47,7 +47,7 @@ export function DataTableRowActions<TData>({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -69,13 +69,20 @@ export function DataTableRowActions<TData>({
     setOpenSheet(open);
     if (!open) {
       const url = new URL(window.location.href);
-      url.searchParams.delete("id"); // hapus param id
+      url.searchParams.delete("id");
       window.history.replaceState(null, "", url.toString());
-      // url.searchParams.delete("id");
-      // // Kembali ke URL employment tanpa navigasi halaman
-      // setTimeout(() => {
-      //   window.history.pushState(null, "", "/dashboard/checkclock");
-      // }, 100);
+    }
+  }
+
+  // DIPERBAIKI: Implementasi proper untuk handleDetailsClick
+  function handleDetailsClick() {
+    if (variant === "checkclock") {
+      setOpenSheet(true);
+      const url = new URL(window.location.href);
+      url.searchParams.set("id", id);
+      window.history.replaceState(null, "", url.toString());
+    } else {
+      router.push(detailsHref);
     }
   }
 
@@ -95,16 +102,14 @@ export function DataTableRowActions<TData>({
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
           {variant === "checkclock" ? (
-            <DetailsSheet open={openSheet} onOpenChange={handleSheetChange}>
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault(); // biar dropdown nggak auto close
-                  handleDetailsClick();
-                }}
-              >
-                Details
-              </DropdownMenuItem>
-            </DetailsSheet>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                handleDetailsClick();
+              }}
+            >
+              Details
+            </DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={handleDetailsClick}>
               Details
@@ -119,9 +124,9 @@ export function DataTableRowActions<TData>({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* {variant === "checkclock" && (
+      {variant === "checkclock" && (
         <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} />
-      )} */}
+      )}
     </>
   );
 }
