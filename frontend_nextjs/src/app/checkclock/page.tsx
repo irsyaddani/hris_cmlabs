@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DataTable } from "../../../components/data-table-components/data-table";
-import { columns } from "../../../components/data-table-components/columns-checkclock";
+import { DataTable } from "../../components/data-table-components/data-table";
+import { columns } from "../../components/data-table-components/columns-checkclock";
 
 interface CheckClock {
   name: string;
