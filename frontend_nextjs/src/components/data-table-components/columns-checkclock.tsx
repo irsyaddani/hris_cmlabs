@@ -194,7 +194,7 @@ export const columns: ColumnDef<Checkclock>[] = [
                 description="This action cannot be undone. This will permanently update to employee data."
                 confirmText="Rejected"
                 cancelText="Cancel"
-                confirmClassName="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+                confirmClassName="bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
                 onConfirm={() => console.log(`Approved: ${row.getValue("id")}`)}
               />
             </div>

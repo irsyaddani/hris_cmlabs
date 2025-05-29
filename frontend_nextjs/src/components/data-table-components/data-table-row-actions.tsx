@@ -33,8 +33,8 @@ export function DataTableRowActions<TData>({
   const id = (row.original as any).id;
   const detailsHref =
     variant === "employment"
-      ? `/dashboard/employment/employee-details?id=${id}`
-      : `/dashboard/checkclock?id=${id}`;
+      ? `/employment/employee-details?id=${id}`
+      : `/checkclock?id=${id}`;
 
   // DIPERBAIKI: Hapus duplikasi function
   async function handleDelete() {

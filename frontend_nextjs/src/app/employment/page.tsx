@@ -2,22 +2,22 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { DataTable } from "../../../components/data-table-components/data-table";
-import { columns } from "../../../components/data-table-components/columns-employment";
+import { DataTable } from "../../components/data-table-components/data-table";
+import { columns } from "../../components/data-table-components/columns-employment";
 import { MiniCard } from "@/components/ui/mini-card";
 import { IconUsers } from "@tabler/icons-react";
 
 export default function EmploymentPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('token');
-  
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     axios
       .get("http://localhost:8000/api/employees", {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
       .then((res) => {
         const formatted = res.data.data.map((emp: any) => ({
