@@ -37,11 +37,17 @@ export function DataTableRowActions<TData>({
   async function handleDelete() {
     if (!confirm("Yakin ingin menghapus data ini?")) return;
 
+  async function handleDelete() {
+    if (!confirm("Yakin ingin menghapus data ini?")) return;
+    
+    const token = localStorage.getItem("token");
+
     try {
       const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
       });
 
@@ -56,16 +62,6 @@ export function DataTableRowActions<TData>({
     } catch (error) {
       alert("Terjadi kesalahan saat menghapus data");
       console.error("Delete error:", error);
-    }
-  }
-
-  function handleDetailsClick() {
-    if (variant === "employment") {
-      router.push(detailsHref);
-    } else if (variant === "checkclock") {
-      setOpenSheet(true);
-      // Update URL tanpa navigasi halaman
-      window.history.pushState(null, "", detailsHref);
     }
   }
 

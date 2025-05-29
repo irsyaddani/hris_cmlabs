@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\CheckClockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,17 +26,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Authenticated user
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        $employee = $user->employee; // pastikan relasi 'employee' ada di model User
+
+        return response()->json([
+            'id'    => $user->id,
+            'email' => $user->email,
+            'level' => $employee->level ?? null,
+        ]);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Employees CRUD
+    Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
 
 });
 
-// Employees CRUD
-Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::post('/', 'store');
-    Route::get('/{id}', 'show');
-    Route::put('/{id}', 'update');
-    Route::delete('/{id}', 'destroy');
-});
+Route::get('/checkclocks', [CheckClockController::class, 'index']);
+

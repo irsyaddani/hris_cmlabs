@@ -6,6 +6,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppBreadcrumb } from "@/components/ui/app-breadcrum";
+import { AuthGuard } from "../AuthGuard";
 
 export default function DashboardLayout({
   children,

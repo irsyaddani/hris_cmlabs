@@ -43,54 +43,58 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
-  const [user, setUser] = useState<{
-    name: string;
-    email: string;
-    avatar: string;
-  } | null>(null);
+const [user, setUser] = useState<{
+  name: string;
+  email: string;
+  avatar: string;
+} | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/api/user`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUser(res.data);
-      } catch (err) {
-        console.error("Gagal mengambil data user:", err);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  const handleLogout = async () => {
-    const token = localStorage.getItem("token");
-    console.log("clicked");
-
+useEffect(() => {
+  const fetchUser = async () => {
     try {
-      await axios.post(`${API_URL}/api/logout`, null, {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(${API_URL}/api/user, {
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: Bearer ${token},
         },
       });
-
-      localStorage.removeItem("token");
-      router.push("/auth/login");
-    } catch (error: any) {
-      console.error("Logout gagal:", error.response?.data || error.message);
-      alert(
-        "Logout gagal: " + (error.response?.data?.message || "Unknown error")
-      );
+      setUser(res.data);
+    } catch (err) {
+      console.error("Gagal mengambil data user:", err);
     }
   };
 
-  const displayUser = user || userProp;
+  fetchUser();
+}, []);
+
+const handleLogout = async () => {
+  const token = localStorage.getItem("token");
+  console.log("clicked");
+
+  try {
+    await axios.post(
+      ${API_URL}/api/logout,
+      {},
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: Bearer ${token},
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error("Logout gagal:", error.response?.data || error.message);
+    alert(
+      "Logout gagal: " + (error.response?.data?.message || "Unknown error")
+    );
+  } finally {
+    localStorage.removeItem("token");
+    router.push("/auth/login");
+  }
+};
+
+const displayUser = user || userProp;
 
   return (
     <SidebarMenu>

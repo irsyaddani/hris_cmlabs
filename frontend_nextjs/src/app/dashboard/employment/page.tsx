@@ -10,13 +10,19 @@ import { IconUsers } from "@tabler/icons-react";
 export default function EmploymentPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const token = localStorage.getItem('token');
+  
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/employees")
+      .get("http://localhost:8000/api/employees", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       .then((res) => {
         const formatted = res.data.data.map((emp: any) => ({
           id: emp.id,
+          employee_code: emp.employee_code,
           name: `${emp.firstName} ${emp.lastName}`,
           phone: emp.mobileNumber,
           branch: emp.branch,

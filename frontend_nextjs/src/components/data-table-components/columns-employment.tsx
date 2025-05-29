@@ -32,11 +32,11 @@ export const columns: ColumnDef<Employee>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "id",
+    accessorKey: "employee_code",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="ID Employee" />
     ),
-    cell: ({ row }) => <div>{row.getValue("id")}</div>,
+    cell: ({ row }) => <div>{row.getValue("employee_code")}</div>,
   },
   {
     accessorKey: "name",
