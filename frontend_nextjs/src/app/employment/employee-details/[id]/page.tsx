@@ -122,7 +122,9 @@ export default function EmployeeDetailsPage() {
     <div className="min-h-screen p-6 space-y-5">
       {/* Personal Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Personal Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Personal Information
+        </h3>
         <div className="flex flex-col gap-7">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-16 h-16 bg-gray-400 rounded-full shrink-0" />
@@ -147,7 +149,9 @@ export default function EmployeeDetailsPage() {
 
       {/* Employee Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Employee Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Employee Information
+        </h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
           <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{positionLabels[employee.position] || employee.position}</p></div>
           <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{employeeLabels[employee.employeeType] || employee.employeeType}</p></div>

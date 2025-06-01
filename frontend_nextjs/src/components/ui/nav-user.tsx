@@ -28,9 +28,12 @@ import {
 
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useEffect, useState } from "react";
+
+const API_URL = "http://localhost:8000";
 
 export function NavUser({
-  user,
+  user: userProp,
 }: {
   user: {
     name: string;
@@ -40,27 +43,58 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const [user, setUser] = useState<{
+    name: string;
+    email: string;
+    avatar: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${API_URL}/api/user`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUser(res.data);
+      } catch (err) {
+        console.error("Gagal mengambil data user:", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+    console.log("clicked");
+
     try {
-      const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:8000/api/logout",
+        `${API_URL}/api/logout`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-    } catch (err) {
-      console.warn("Logout error, but continuing to clear token:", err);
+    } catch (error: any) {
+      console.error("Logout gagal:", error.response?.data || error.message);
+      alert(
+        "Logout gagal: " + (error.response?.data?.message || "Unknown error")
+      );
     } finally {
       localStorage.removeItem("token");
       router.push("/auth/login");
     }
   };
+
+  const displayUser = user || userProp;
 
   return (
     <SidebarMenu>
@@ -72,18 +106,18 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                 <AvatarFallback className="rounded-lg">PY</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-medium">{displayUser.name}</span>
+                <span className="truncate text-xs">{displayUser.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -91,12 +125,17 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage
+                    src={displayUser.avatar}
+                    alt={displayUser.name}
+                  />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-medium">
+                    {displayUser.name}
+                  </span>
+                  <span className="truncate text-xs">{displayUser.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>

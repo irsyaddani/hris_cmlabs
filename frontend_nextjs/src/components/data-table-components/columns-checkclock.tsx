@@ -7,6 +7,7 @@ import { DataTableRowActions } from "./data-table-row-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconX } from "@tabler/icons-react";
+import { ConfirmDialog } from "../dialogs/confirm-dialog";
 
 export const columns: ColumnDef<Checkclock>[] = [
   {
@@ -170,20 +171,32 @@ export const columns: ColumnDef<Checkclock>[] = [
         if (approval === "pending") {
           return (
             <div className="flex gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => console.log(`Approved: ${row.getValue("id")}`)}
-              >
-                <IconCheck className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => console.log(`Rejected: ${row.getValue("id")}`)}
-              >
-                <IconX className="h-4 w-4" />
-              </Button>
+              <ConfirmDialog
+                trigger={
+                  <Button size="icon" variant="outline">
+                    <IconCheck className="h-4 w-4" />
+                  </Button>
+                }
+                title="Are you sure want to proceed?"
+                description="This action cannot be undone. This will permanently update to employee data."
+                confirmText="Approve"
+                cancelText="Cancel"
+                confirmClassName="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+                onConfirm={() => console.log(`Approved: ${row.getValue("id")}`)}
+              />
+              <ConfirmDialog
+                trigger={
+                  <Button size="icon" variant="outline">
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                }
+                title="Are you sure want to proceed?"
+                description="This action cannot be undone. This will permanently update to employee data."
+                confirmText="Rejected"
+                cancelText="Cancel"
+                confirmClassName="bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
+                onConfirm={() => console.log(`Approved: ${row.getValue("id")}`)}
+              />
             </div>
           );
         }

@@ -36,17 +36,17 @@ const data = {
     },
     {
       title: "Employment",
-      url: "/dashboard/employment",
+      url: "/employment",
       icon: IconUsersGroup,
     },
     {
       title: "Check Clock",
-      url: "/dashboard/checkclock",
+      url: "/checkclock",
       icon: IconClockPin,
     },
     {
       title: "Billing",
-      url: "/dashboard/billing",
+      url: "/billing",
       icon: IconReceipt,
     },
   ],

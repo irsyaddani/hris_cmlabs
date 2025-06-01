@@ -119,9 +119,14 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $user = $request->user(); // user dari token saat ini
+        $user = $request->user();
 
-        // Hapus token saat ini (dari header Authorization)
+        if (!$user) {
+            return response()->json([
+                'message' => 'Token tidak valid atau tidak dikirim.',
+            ], 401);
+        }
+
         $user->currentAccessToken()->delete();
 
         return response()->json([
