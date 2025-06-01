@@ -30,6 +30,55 @@ interface Employee {
   accountNumber: string;
 }
 
+const bankLabels: Record<string, string> = {
+  bca: "BCA",
+  bri: "BRI",
+  mandiri: "Mandiri",
+};
+
+ const genderLabels: Record<string, string> = {
+  male: "Male",
+  female: "Female"
+ }
+
+ const educationLabels: Record<string, string> = {
+  high_school: "High School",
+  vocational_high_school: "Vocational High School",
+  bachelor : "Bachelor's Degree (S1/D4)",
+  master: "Master's Degree (S2)",
+  doctorate: "Doctorate (S3)"
+ };
+
+ const positionLabels: Record<string, string> = {
+  backend_dev : "Backend Developer",
+  frontend_dev : "Frontend Developer",
+  fullstack_dev : "Fullstack Developer",
+  hr_manager : "HR Manager",
+  mobile_dev : "Mobile Developer",
+  project_manager : "Project Manager",
+  qa_engineer : "QA Engineer",
+  recruiter : "Recruiter",
+  ui_designer : "UI/UX Designer"
+ }
+
+ const employeeLabels: Record<string, string> = {
+  contract : "Contract",
+  employee : "Employee",
+  probation : "Probation"
+ }
+ 
+ const gradeLabels: Record<string, string> = {
+  lead : "Lead",
+  manager : "Manager",
+  senior_staff : "Senior Staff",
+  staff : "Staff"
+ }
+
+ const branchlabels: Record<string, string> = {
+  malang : "Malang",
+  surabaya : "Surabaya"
+ }
+
 export default function EmployeeDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -89,9 +138,9 @@ export default function EmployeeDetailsPage() {
             <div><p className="text-sm text-muted-foreground">Email</p><p className="text-md font-medium">{employee.user?.email}</p></div>
             <div><p className="text-sm text-muted-foreground">Mobile Number</p><p className="text-md font-medium">{employee.mobileNumber}</p></div>
             <div><p className="text-sm text-muted-foreground">Birth</p><p className="text-md font-medium">{employee.birthPlace}, {employee.birthDate}</p></div>
-            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{employee.gender}</p></div>
+            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{genderLabels[employee.gender] || employee.gender}</p></div>
             <div><p className="text-sm text-muted-foreground">NIK</p><p className="text-md font-medium">{employee.nik}</p></div>
-            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{employee.lastEducation}</p></div>
+            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{educationLabels[employee.lastEducation] || employee.lastEducation}</p></div>
           </div>
         </div>
       </div>
@@ -100,19 +149,19 @@ export default function EmployeeDetailsPage() {
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
         <h3 className="text-md text-muted-foreground mb-6">Employee Information</h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{employee.position}</p></div>
-          <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{employee.employeeType}</p></div>
+          <div><p className="text-sm text-muted-foreground">Position</p><p className="text-md font-medium">{positionLabels[employee.position] || employee.position}</p></div>
+          <div><p className="text-sm text-muted-foreground">Employment Type</p><p className="text-md font-medium">{employeeLabels[employee.employeeType] || employee.employeeType}</p></div>
           <div><p className="text-sm text-muted-foreground">Join Date</p><p className="text-md font-medium">{employee.joinDate}</p></div>
-          <div><p className="text-sm text-muted-foreground">Branch</p><p className="text-md font-medium">{employee.branch}</p></div>
-          <div><p className="text-sm text-muted-foreground">Grade</p><p className="text-md font-medium">{employee.grade}</p></div>
+          <div><p className="text-sm text-muted-foreground">Branch</p><p className="text-md font-medium">{branchlabels[employee.branch] || employee.branch}</p></div>
+          <div><p className="text-sm text-muted-foreground">Grade</p><p className="text-md font-medium">{bankLabels[employee.bank] || employee.bank}</p></div>
         </div>
       </div>
 
       {/* Bank Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Bank Information</h3>
+        <div className="text-md text-muted-foreground mb-6">Bank Information</div>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium">{employee.bank}</p></div>
+          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium">{bankLabels[employee.bank] || employee.bank}</p></div>
           <div><p className="text-sm text-muted-foreground">Bank Account Name</p><p className="text-md font-medium">{employee.bankAccountName}</p></div>
           <div><p className="text-sm text-muted-foreground">Account Number</p><p className="text-md font-medium">{employee.accountNumber}</p></div>
         </div>
