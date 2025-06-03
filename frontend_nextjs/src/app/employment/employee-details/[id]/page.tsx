@@ -7,12 +7,12 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 
 interface Employee {
-  id: string,
+  id: string;
   employee_code: string;
   firstName: string;
   lastName: string;
   user: {
-      email: string;
+    email: string;
   };
   mobileNumber: string;
   birthPlace: string;
@@ -34,13 +34,14 @@ export default function EmployeeDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const token = localStorage.getItem('token');
-  
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
-    axios.get(`http://localhost:8000/api/employees/${id}`, {
+    axios
+      .get(`http://localhost:8000/api/employees/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
       .then((res) => {
         setEmployee(res.data.data);
@@ -51,13 +52,14 @@ export default function EmployeeDetailsPage() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm("Apakah Anda yakin ingin menghapus data karyawan ini?")) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus data karyawan ini?"))
+      return;
 
     try {
       await axios.delete(`http://localhost:8000/api/employees/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       alert("Data karyawan berhasil dihapus.");
       router.push("/dashboard/employment");
@@ -88,12 +90,32 @@ export default function EmployeeDetailsPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-6 w-full">
-            <div><p className="text-sm text-muted-foreground">Email</p><p className="text-md font-medium">{employee.user?.email}</p></div>
-            <div><p className="text-sm text-muted-foreground">Mobile Number</p><p className="text-md font-medium">{employee.mobileNumber}</p></div>
-            <div><p className="text-sm text-muted-foreground">Birth</p><p className="text-md font-medium">{employee.birthPlace}, {employee.birthDate}</p></div>
-            <div><p className="text-sm text-muted-foreground">Gender</p><p className="text-md font-medium">{employee.gender}</p></div>
-            <div><p className="text-sm text-muted-foreground">NIK</p><p className="text-md font-medium">{employee.nik}</p></div>
-            <div><p className="text-sm text-muted-foreground">Last Education</p><p className="text-md font-medium">{employee.lastEducation}</p></div>
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="text-md font-medium">{employee.user?.email}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Mobile Number</p>
+              <p className="text-md font-medium">{employee.mobileNumber}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Birth</p>
+              <p className="text-md font-medium">
+                {employee.birthPlace}, {employee.birthDate}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Gender</p>
+              <p className="text-md font-medium">{employee.gender}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">NIK</p>
+              <p className="text-md font-medium">{employee.nik}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Education</p>
+              <p className="text-md font-medium">{employee.lastEducation}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -131,9 +153,18 @@ export default function EmployeeDetailsPage() {
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
         <h3 className="text-md text-muted-foreground mb-6">Bank Information</h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
-          <div><p className="text-sm text-muted-foreground">Bank</p><p className="text-md font-medium">{employee.bank}</p></div>
-          <div><p className="text-sm text-muted-foreground">Bank Account Name</p><p className="text-md font-medium">{employee.bankAccountName}</p></div>
-          <div><p className="text-sm text-muted-foreground">Account Number</p><p className="text-md font-medium">{employee.accountNumber}</p></div>
+          <div>
+            <p className="text-sm text-muted-foreground">Bank</p>
+            <p className="text-md font-medium">{employee.bank}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Bank Account Name</p>
+            <p className="text-md font-medium">{employee.bankAccountName}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Account Number</p>
+            <p className="text-md font-medium">{employee.accountNumber}</p>
+          </div>
         </div>
       </div>
 
@@ -141,15 +172,17 @@ export default function EmployeeDetailsPage() {
         <Button
           variant="destructive"
           size="lg"
-          className="gap-4 bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
+          className="gap-4 bg-danger-main text-white hover:bg-danger-hover"
           onClick={handleDelete}
         >
           Hapus
         </Button>
         <Button
           size="lg"
-          className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
-          onClick={() => router.push(`/dashboard/employment/employee-edit/${id}`)}
+          className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+          onClick={() =>
+            router.push(`/dashboard/employment/employee-edit/${id}`)
+          }
         >
           Edit
         </Button>
