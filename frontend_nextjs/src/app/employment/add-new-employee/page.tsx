@@ -6,13 +6,12 @@ import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
 import { z } from "zod";
 import { useState } from "react";
 
-import { DatePickerField } from "@/components/form/date-picker-field";
+import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { SelectField } from "@/components/form/select-field";
 import { TextField } from "@/components/form/text-field";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
@@ -44,56 +43,55 @@ export default function AddNewEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
-    try {
-    const token = localStorage.getItem('token');
-    
-    const response = await fetch("http://localhost:8000/api/employees", {
-      method: "POST",
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        ...data,
-        birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
-        joinDate: data.joinDate?.toISOString().split("T")[0],
-      }),
-    });
-    
-    const text = await response.text();
-    console.log("Raw response text:", text);
 
     try {
-      const json = JSON.parse(text);
+      const token = localStorage.getItem("token");
 
-      if (!response.ok) {
-        console.error("Backend validation error or other:", json);
-        setError(json.message || "Gagal menyimpan data.");
-        return;
+      const response = await fetch("http://localhost:8000/api/employees", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...data,
+          birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
+          joinDate: data.joinDate?.toISOString().split("T")[0],
+        }),
+      });
+
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      try {
+        const json = JSON.parse(text);
+
+        if (!response.ok) {
+          console.error("Backend validation error or other:", json);
+          setError(json.message || "Gagal menyimpan data.");
+          return;
+        }
+
+        setSuccess("Data karyawan berhasil disimpan!");
+        router.push("/dashboard/employment/");
+        form.reset();
+      } catch (jsonError) {
+        console.error("Response is not valid JSON:", jsonError);
+        setError("Respons server tidak valid JSON.");
       }
-
-      setSuccess("Data karyawan berhasil disimpan!");
-      router.push("/dashboard/employment/");
-      form.reset();
-    } catch (jsonError) {
-      console.error("Response is not valid JSON:", jsonError);
-      setError("Respons server tidak valid JSON.");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Terjadi kesalahan saat mengirim data.");
+    } finally {
+      setLoading(false);
     }
-    
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Terjadi kesalahan saat mengirim data.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
@@ -108,11 +106,8 @@ export default function AddNewEmployeePage() {
                 </div>
                 <div className="flex space-x-3">
                   <TextField label="Birth Place" name="birthPlace" required />
-                  <DatePickerField
-                    label="Birth Date"
-                    name="birthDate"
-                    required
-                  />
+                  {/* <DatePicker label="Birth Date" name="birthDate" required /> */}
+                  <DatePicker label="Birth Date" name="birthDate" />
                 </div>
                 <TextField label="NIK" name="nik" required />
                 <SelectField
@@ -145,11 +140,7 @@ export default function AddNewEmployeePage() {
                   ]}
                 />
                 <TextField label="Email" name="email" type="email" required />
-                <TextField
-                  label="Mobile Number"
-                  name="mobileNumber"
-                  required
-                />
+                <TextField label="Mobile Number" name="mobileNumber" required />
               </div>
             </div>
           </FormSection>
@@ -196,7 +187,8 @@ export default function AddNewEmployeePage() {
                 />
               </div>
               <div className="space-y-4">
-                <DatePickerField label="Join Date" name="joinDate" required />
+                {/* <DatePicker label="Join Date" name="joinDate" required /> */}
+                <DatePicker label="Join Date" name="joinDate" />
                 <SelectField
                   label="Branch"
                   name="branch"
@@ -239,9 +231,7 @@ export default function AddNewEmployeePage() {
             </div>
           </FormSection>
 
-          {error && (
-            <p className="text-red-600 text-sm font-medium">{error}</p>
-          )}
+          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
           {success && (
             <p className="text-green-600 text-sm font-medium">{success}</p>
           )}
@@ -251,7 +241,7 @@ export default function AddNewEmployeePage() {
               type="submit"
               size="lg"
               disabled={loading}
-              className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
             >
               {loading ? "Menyimpan..." : "Simpan"}
             </Button>
