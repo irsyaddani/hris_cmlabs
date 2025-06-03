@@ -115,8 +115,8 @@ export default function AddNewEmployeePage() {
                   name="gender"
                   required
                   options={[
-                    { label: "Male", value: "Male" },
-                    { label: "Female", value: "Female" },
+                    { label: "Male", value: "male" },
+                    { label: "Female", value: "female" },
                   ]}
                 />
               </div>
@@ -128,21 +128,15 @@ export default function AddNewEmployeePage() {
                   options={[
                     {
                       label: "High School or Equivalent",
-                      value: "HighSchool",
+                      value: "high_school",
                     },
                     {
                       label: "Vocational High School",
-                      value: "Vocational High School",
+                      value: "vocational_high_school",
                     },
-                    {
-                      label: "Bachelor's Degree (S1/D4)",
-                      value: "Bachelor's Degree (S1/D4)",
-                    },
-                    {
-                      label: "Master's Degree (S2)",
-                      value: "Master's Degree (S2)",
-                    },
-                    { label: "Doctorate (S3)", value: "Doctorate (S3)" },
+                    { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
+                    { label: "Master's Degree (S2)", value: "master" },
+                    { label: "Doctorate (S3)", value: "doctorate" },
                   ]}
                 />
                 <TextField label="Email" name="email" type="email" required />
@@ -159,18 +153,15 @@ export default function AddNewEmployeePage() {
                   name="position"
                   required
                   options={[
-                    { label: "Backend Developer", value: "Backend Developer" },
-                    {
-                      label: "Frontend Developer",
-                      value: "Frontend Developer",
-                    },
-                    { label: "Fullstack Developer", value: "Fullstack" },
-                    { label: "HR Manager", value: "HR Manager" },
-                    { label: "Mobile Developer", value: "Mobile Developer" },
-                    { label: "Project Manager", value: "Project Developer" },
-                    { label: "QA Engineer", value: "QA Engineer" },
-                    { label: "Recruiter", value: "Recruiter" },
-                    { label: "UI/UX Designer", value: "UI/UX Designer" },
+                    { label: "Backend Developer", value: "backend_dev" },
+                    { label: "Frontend Developer", value: "frontend_dev" },
+                    { label: "Fullstack Developer", value: "fullstack_dev" },
+                    { label: "HR Manager", value: "hr_manager" },
+                    { label: "Mobile Developer", value: "mobile_dev" },
+                    { label: "Project Manager", value: "project_manager" },
+                    { label: "QA Engineer", value: "qa_engineer" },
+                    { label: "Recruiter", value: "recruiter" },
+                    { label: "UI/UX Designer", value: "ui_designer" },
                   ]}
                 />
                 <SelectField
@@ -178,9 +169,9 @@ export default function AddNewEmployeePage() {
                   name="employeeType"
                   required
                   options={[
-                    { label: "Contract", value: "Contract" },
-                    { label: "Employee", value: "Employee" },
-                    { label: "Probation", value: "Probation" },
+                    { label: "Contract", value: "contract" },
+                    { label: "Employee", value: "employee" },
+                    { label: "Probation", value: "probation" },
                   ]}
                 />
                 <SelectField
@@ -188,10 +179,10 @@ export default function AddNewEmployeePage() {
                   name="grade"
                   required
                   options={[
-                    { label: "Lead", value: "Lead" },
-                    { label: "Manager", value: "Manager" },
-                    { label: "Senior Staff", value: "Senior Staff" },
-                    { label: "Staff", value: "Staff" },
+                    { label: "Lead", value: "lead" },
+                    { label: "Manager", value: "manager" },
+                    { label: "Senior Staff", value: "senior_staff" },
+                    { label: "Staff", value: "staff" },
                   ]}
                 />
               </div>
@@ -203,8 +194,8 @@ export default function AddNewEmployeePage() {
                   name="branch"
                   required
                   options={[
-                    { label: "Malang", value: "Malang" },
-                    { label: "Surabaya", value: "Surabaya" },
+                    { label: "Malang", value: "malang" },
+                    { label: "Surabaya", value: "surabaya" },
                   ]}
                 />
               </div>
@@ -219,9 +210,9 @@ export default function AddNewEmployeePage() {
                   name="bank"
                   required
                   options={[
-                    { label: "BCA", value: "BCA" },
-                    { label: "BRI", value: "BRI" },
-                    { label: "Mandiri", value: "Mandiri" },
+                    { label: "BCA", value: "bca" },
+                    { label: "BRI", value: "bri" },
+                    { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
                 <TextField
