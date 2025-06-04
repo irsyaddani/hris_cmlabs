@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CheckClockController;
+use App\Http\Controllers\API\ClockSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
-
+// routes/api.php
 Route::get('/checkclocks', [CheckClockController::class, 'index']);
+Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
+
 
