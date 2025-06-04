@@ -8,7 +8,7 @@ import { z } from "zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
 import { TextField } from "@/components/form/text-field";
 import { SelectField } from "@/components/form/select-field";
-import { DatePickerField } from "@/components/form/date-picker-field";
+import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -26,17 +26,20 @@ export default function EditEmployeePage() {
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
   });
-  
-  const token = localStorage.getItem('token');
+
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/employees/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        const res = await axios.get(
+          `http://localhost:8000/api/employees/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
+        );
         const data = res.data.data;
 
         form.reset({
@@ -73,18 +76,21 @@ export default function EditEmployeePage() {
     setSuccess(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/employees/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...data,
-          birthDate: data.birthDate?.toISOString().split("T")[0],
-          joinDate: data.joinDate?.toISOString().split("T")[0],
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/employees/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...data,
+            birthDate: data.birthDate?.toISOString().split("T")[0],
+            joinDate: data.joinDate?.toISOString().split("T")[0],
+          }),
+        }
+      );
 
       const result = await response.json();
 
@@ -116,7 +122,7 @@ export default function EditEmployeePage() {
                 </div>
                 <div className="flex space-x-3">
                   <TextField label="Birth Place" name="birthPlace" required />
-                  <DatePickerField label="Birth Date" name="birthDate" required />
+                  <DatePicker label="Birth Date" name="birthDate" required />
                 </div>
                 <TextField label="NIK" name="nik" required />
                 <SelectField
@@ -135,8 +141,14 @@ export default function EditEmployeePage() {
                   name="lastEducation"
                   required
                   options={[
-                    { label: "High School or Equivalent", value: "high_school" },
-                    { label: "Vocational High School", value: "vocational_high_school" },
+                    {
+                      label: "High School or Equivalent",
+                      value: "high_school",
+                    },
+                    {
+                      label: "Vocational High School",
+                      value: "vocational_high_school",
+                    },
                     { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
                     { label: "Master's Degree (S2)", value: "master" },
                     { label: "Doctorate (S3)", value: "doctorate" },
@@ -190,7 +202,7 @@ export default function EditEmployeePage() {
                 />
               </div>
               <div className="space-y-4">
-                <DatePickerField label="Join Date" name="joinDate" required />
+                <DatePicker label="Join Date" name="joinDate" required />
                 <SelectField
                   label="Branch"
                   name="branch"
@@ -217,23 +229,35 @@ export default function EditEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextField label="Account Number" name="accountNumber" required />
+                <TextField
+                  label="Account Number"
+                  name="accountNumber"
+                  required
+                />
               </div>
               <div className="space-y-4">
-                <TextField label="Bank Account Name" name="bankAccountName" required />
+                <TextField
+                  label="Bank Account Name"
+                  name="bankAccountName"
+                  required
+                />
               </div>
             </div>
           </FormSection>
 
-          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
-          {success && <p className="text-green-600 text-sm font-medium">{success}</p>}
+          {error && (
+            <p className="text-danger-main text-sm font-medium">{error}</p>
+          )}
+          {success && (
+            <p className="text-success-main text-sm font-medium">{success}</p>
+          )}
 
           <div className="flex justify-end">
             <Button
               type="submit"
               size="lg"
               disabled={loading}
-              className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
             >
               {loading ? "Menyimpan..." : "Perbarui"}
             </Button>

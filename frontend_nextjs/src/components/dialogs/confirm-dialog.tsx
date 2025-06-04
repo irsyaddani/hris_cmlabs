@@ -20,7 +20,9 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   onConfirm?: () => void;
-  confirmClassName?: string; // 👈 tambahan
+  onCancel?: () => void;
+  confirmClassName?: string;
+  cancelClassName?: string;
 }
 
 export function ConfirmDialog({
@@ -30,7 +32,9 @@ export function ConfirmDialog({
   confirmText = "Continue",
   cancelText = "Cancel",
   onConfirm,
+  onCancel,
   confirmClassName = "",
+  cancelClassName = "",
 }: ConfirmDialogProps) {
   return (
     <AlertDialog>
@@ -41,7 +45,10 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelText}</AlertDialogCancel>
+          {/* <AlertDialogCancel>{cancelText}</AlertDialogCancel> */}
+          <AlertDialogCancel onClick={onCancel} className={cancelClassName}>
+            {cancelText}
+          </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className={confirmClassName}>
             {confirmText}
           </AlertDialogAction>

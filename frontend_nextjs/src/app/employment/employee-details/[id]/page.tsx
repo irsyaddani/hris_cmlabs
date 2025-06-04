@@ -7,12 +7,12 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 
 interface Employee {
-  id: string,
+  id: string;
   employee_code: string;
   firstName: string;
   lastName: string;
   user: {
-      email: string;
+    email: string;
   };
   mobileNumber: string;
   birthPlace: string;
@@ -83,13 +83,14 @@ export default function EmployeeDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const token = localStorage.getItem('token');
-  
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
-    axios.get(`http://localhost:8000/api/employees/${id}`, {
+    axios
+      .get(`http://localhost:8000/api/employees/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
       .then((res) => {
         setEmployee(res.data.data);
@@ -100,13 +101,14 @@ export default function EmployeeDetailsPage() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm("Apakah Anda yakin ingin menghapus data karyawan ini?")) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus data karyawan ini?"))
+      return;
 
     try {
       await axios.delete(`http://localhost:8000/api/employees/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       alert("Data karyawan berhasil dihapus.");
       router.push("/dashboard/employment");
@@ -175,15 +177,17 @@ export default function EmployeeDetailsPage() {
         <Button
           variant="destructive"
           size="lg"
-          className="gap-4 bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
+          className="gap-4 bg-danger-main text-white hover:bg-danger-hover"
           onClick={handleDelete}
         >
           Hapus
         </Button>
         <Button
           size="lg"
-          className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
-          onClick={() => router.push(`/dashboard/employment/employee-edit/${id}`)}
+          className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+          onClick={() =>
+            router.push(`/dashboard/employment/employee-edit/${id}`)
+          }
         >
           Edit
         </Button>
