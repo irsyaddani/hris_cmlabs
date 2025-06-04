@@ -6,13 +6,12 @@ import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
 import { z } from "zod";
 import { useState } from "react";
 
-import { DatePickerField } from "@/components/form/date-picker-field";
+import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { SelectField } from "@/components/form/select-field";
 import { TextField } from "@/components/form/text-field";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
@@ -44,56 +43,55 @@ export default function AddNewEmployeePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
-    try {
-    const token = localStorage.getItem('token');
-    
-    const response = await fetch("http://localhost:8000/api/employees", {
-      method: "POST",
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        ...data,
-        birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
-        joinDate: data.joinDate?.toISOString().split("T")[0],
-      }),
-    });
-    
-    const text = await response.text();
-    console.log("Raw response text:", text);
 
     try {
-      const json = JSON.parse(text);
+      const token = localStorage.getItem("token");
 
-      if (!response.ok) {
-        console.error("Backend validation error or other:", json);
-        setError(json.message || "Gagal menyimpan data.");
-        return;
+      const response = await fetch("http://localhost:8000/api/employees", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...data,
+          birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
+          joinDate: data.joinDate?.toISOString().split("T")[0],
+        }),
+      });
+
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      try {
+        const json = JSON.parse(text);
+
+        if (!response.ok) {
+          console.error("Backend validation error or other:", json);
+          setError(json.message || "Gagal menyimpan data.");
+          return;
+        }
+
+        setSuccess("Data karyawan berhasil disimpan!");
+        router.push("/dashboard/employment/");
+        form.reset();
+      } catch (jsonError) {
+        console.error("Response is not valid JSON:", jsonError);
+        setError("Respons server tidak valid JSON.");
       }
-
-      setSuccess("Data karyawan berhasil disimpan!");
-      router.push("/dashboard/employment/");
-      form.reset();
-    } catch (jsonError) {
-      console.error("Response is not valid JSON:", jsonError);
-      setError("Respons server tidak valid JSON.");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Terjadi kesalahan saat mengirim data.");
+    } finally {
+      setLoading(false);
     }
-    
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setError("Terjadi kesalahan saat mengirim data.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
@@ -108,11 +106,8 @@ export default function AddNewEmployeePage() {
                 </div>
                 <div className="flex space-x-3">
                   <TextField label="Birth Place" name="birthPlace" required />
-                  <DatePickerField
-                    label="Birth Date"
-                    name="birthDate"
-                    required
-                  />
+                  {/* <DatePicker label="Birth Date" name="birthDate" required /> */}
+                  <DatePicker label="Birth Date" name="birthDate" />
                 </div>
                 <TextField label="NIK" name="nik" required />
                 <SelectField
@@ -120,8 +115,8 @@ export default function AddNewEmployeePage() {
                   name="gender"
                   required
                   options={[
-                    { label: "Male", value: "Male" },
-                    { label: "Female", value: "Female" },
+                    { label: "Male", value: "male" },
+                    { label: "Female", value: "female" },
                   ]}
                 />
               </div>
@@ -133,23 +128,19 @@ export default function AddNewEmployeePage() {
                   options={[
                     {
                       label: "High School or Equivalent",
-                      value: "HighSchool",
+                      value: "high_school",
                     },
                     {
                       label: "Vocational High School",
-                      value: "Vocational High School",
+                      value: "vocational_high_school",
                     },
-                    { label: "Bachelor's Degree (S1/D4)", value: "Bachelor's Degree (S1/D4)" },
-                    { label: "Master's Degree (S2)", value: "Master's Degree (S2)" },
-                    { label: "Doctorate (S3)", value: "Doctorate (S3)" },
+                    { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
+                    { label: "Master's Degree (S2)", value: "master" },
+                    { label: "Doctorate (S3)", value: "doctorate" },
                   ]}
                 />
                 <TextField label="Email" name="email" type="email" required />
-                <TextField
-                  label="Mobile Number"
-                  name="mobileNumber"
-                  required
-                />
+                <TextField label="Mobile Number" name="mobileNumber" required />
               </div>
             </div>
           </FormSection>
@@ -162,15 +153,15 @@ export default function AddNewEmployeePage() {
                   name="position"
                   required
                   options={[
-                    { label: "Backend Developer", value: "Backend Developer" },
-                    { label: "Frontend Developer", value: "Frontend Developer" },
-                    { label: "Fullstack Developer", value: "Fullstack" },
-                    { label: "HR Manager", value: "HR Manager" },
-                    { label: "Mobile Developer", value: "Mobile Developer" },
-                    { label: "Project Manager", value: "Project Developer" },
-                    { label: "QA Engineer", value: "QA Engineer" },
-                    { label: "Recruiter", value: "Recruiter" },
-                    { label: "UI/UX Designer", value: "UI/UX Designer" },
+                    { label: "Backend Developer", value: "backend_dev" },
+                    { label: "Frontend Developer", value: "frontend_dev" },
+                    { label: "Fullstack Developer", value: "fullstack_dev" },
+                    { label: "HR Manager", value: "hr_manager" },
+                    { label: "Mobile Developer", value: "mobile_dev" },
+                    { label: "Project Manager", value: "project_manager" },
+                    { label: "QA Engineer", value: "qa_engineer" },
+                    { label: "Recruiter", value: "recruiter" },
+                    { label: "UI/UX Designer", value: "ui_designer" },
                   ]}
                 />
                 <SelectField
@@ -178,9 +169,9 @@ export default function AddNewEmployeePage() {
                   name="employeeType"
                   required
                   options={[
-                    { label: "Contract", value: "Contract" },
-                    { label: "Employee", value: "Employee" },
-                    { label: "Probation", value: "Probation" },
+                    { label: "Contract", value: "contract" },
+                    { label: "Employee", value: "employee" },
+                    { label: "Probation", value: "probation" },
                   ]}
                 />
                 <SelectField
@@ -188,22 +179,23 @@ export default function AddNewEmployeePage() {
                   name="grade"
                   required
                   options={[
-                    { label: "Lead", value: "Lead" },
-                    { label: "Manager", value: "Manager" },
-                    { label: "Senior Staff", value: "Senior Staff" },
-                    { label: "Staff", value: "Staff" },
+                    { label: "Lead", value: "lead" },
+                    { label: "Manager", value: "manager" },
+                    { label: "Senior Staff", value: "senior_staff" },
+                    { label: "Staff", value: "staff" },
                   ]}
                 />
               </div>
               <div className="space-y-4">
-                <DatePickerField label="Join Date" name="joinDate" required />
+                {/* <DatePicker label="Join Date" name="joinDate" required /> */}
+                <DatePicker label="Join Date" name="joinDate" />
                 <SelectField
                   label="Branch"
                   name="branch"
                   required
                   options={[
-                    { label: "Malang", value: "Malang" },
-                    { label: "Surabaya", value: "Surabaya" },
+                    { label: "Malang", value: "malang" },
+                    { label: "Surabaya", value: "surabaya" },
                   ]}
                 />
               </div>
@@ -218,9 +210,9 @@ export default function AddNewEmployeePage() {
                   name="bank"
                   required
                   options={[
-                    { label: "BCA", value: "BCA" },
-                    { label: "BRI", value: "BRI" },
-                    { label: "Mandiri", value: "Mandiri" },
+                    { label: "BCA", value: "bca" },
+                    { label: "BRI", value: "bri" },
+                    { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
                 <TextField
@@ -239,9 +231,7 @@ export default function AddNewEmployeePage() {
             </div>
           </FormSection>
 
-          {error && (
-            <p className="text-red-600 text-sm font-medium">{error}</p>
-          )}
+          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
           {success && (
             <p className="text-green-600 text-sm font-medium">{success}</p>
           )}
@@ -251,7 +241,7 @@ export default function AddNewEmployeePage() {
               type="submit"
               size="lg"
               disabled={loading}
-              className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
+              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
             >
               {loading ? "Menyimpan..." : "Simpan"}
             </Button>

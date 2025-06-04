@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Table } from "@tanstack/react-table";
+import { format, isSameDay } from "date-fns";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CalendarDatePicker } from "@/components/calendar-date-picker";
+import { SimpleDatePicker } from "@/components/simple-date-picker";
 
 import {
   IconFileExport,
@@ -20,7 +21,7 @@ import { SettingSheet } from "../setting-sheet";
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  variant?: "employment" | "checkclock";
+  variant?: "employment" | "checkclock" | "billing";
 }
 
 export function DataTableToolbar<TData>({
@@ -28,39 +29,77 @@ export function DataTableToolbar<TData>({
   variant = "employment",
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().getFullYear(), 0, 1),
-    to: new Date(),
-  });
+  // Handler untuk filter berdasarkan tanggal
+  const handleDateFilter = (date: Date | undefined) => {
+    setSelectedDate(date);
 
-  const handleDateSelect = ({ from, to }: { from: Date; to: Date }) => {
-    setDateRange({ from, to });
-    table.getColumn("date")?.setFilterValue([from, to]);
+    if (date) {
+      // Filter data berdasarkan tanggal yang dipilih
+      // Asumsi kolom tanggal bernama "date" atau "created_at"
+      const dateColumn =
+        table.getColumn("date") || table.getColumn("created_at");
+
+      if (dateColumn) {
+        dateColumn.setFilterValue((rows: any) => {
+          return rows.filter((row: any) => {
+            const rowDate = new Date(
+              row.getValue("date") || row.getValue("created_at")
+            );
+            return isSameDay(rowDate, date);
+          });
+        });
+      }
+    } else {
+      // Reset filter jika tidak ada tanggal yang dipilih
+      const dateColumn =
+        table.getColumn("date") || table.getColumn("created_at");
+      dateColumn?.setFilterValue(undefined);
+    }
+  };
+
+  // Handler untuk clear semua filter
+  const handleClearFilters = () => {
+    table.resetColumnFilters();
+    setSelectedDate(undefined);
   };
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-1 flex-wrap items-center gap-2">
-        {/* 🔍 Search Field */}
-        <div className="relative w-[150px] lg:w-[250px]">
-          <Input
-            placeholder="Search employee..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => {
-              table.getColumn("name")?.setFilterValue(event.target.value);
-            }}
-            className="h-9 w-full pr-10"
+        {/* 🔍 Search Field - Only for employment and checkclock variants */}
+        {(variant === "employment" || variant === "checkclock") && (
+          <div className="relative w-[150px] lg:w-[250px]">
+            <Input
+              placeholder="Search employee..."
+              value={
+                (table.getColumn("name")?.getFilterValue() as string) ?? ""
+              }
+              onChange={(event) => {
+                table.getColumn("name")?.setFilterValue(event.target.value);
+              }}
+              className="h-9 w-full pr-10"
+            />
+            {isFiltered && (
+              <button
+                onClick={handleClearFilters}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-6 w-6"
+              >
+                <IconX className="h-4 w-4 text-gray-600" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 📅 Date Picker - Only for checkclock and billing variants */}
+        {(variant === "checkclock" || variant === "billing") && (
+          <SimpleDatePicker
+            onDateSelect={handleDateFilter}
+            placeholder="Filter by date"
+            className="h-9"
           />
-          {isFiltered && (
-            <button
-              onClick={() => table.resetColumnFilters()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-6 w-6"
-            >
-              <IconX className="h-4 w-4 text-gray-600" />
-            </button>
-          )}
-        </div>
+        )}
 
         {/* ✨ Conditionally Render Buttons Based on Variant */}
         {variant === "employment" && (
@@ -81,10 +120,10 @@ export function DataTableToolbar<TData>({
               <IconFileImport className="h-4 w-4" />
               Import
             </Button>
-            <Link href="/dashboard/employment/add-new-employee">
+            <Link href="/employment/add-new-employee">
               <Button
                 size="default"
-                className="gap-4 bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
               >
                 Add Data
               </Button>
@@ -94,17 +133,11 @@ export function DataTableToolbar<TData>({
 
         {variant === "checkclock" && (
           <>
-            {/* <CalendarDatePicker
-              date={dateRange}
-              onDateSelect={handleDateSelect}
-              className="h-9 w-[250px]"
-              variant="outline"
-            /> */}
             <SettingSheet>
               <Button
                 size="default"
                 variant="outline"
-                className="gap-2 hover:bg-[var(--color-neutral-200)]"
+                className="gap-2 hover:bg-neutral-200"
               >
                 <IconSettings className="h-4 w-4" />
                 Settings
@@ -113,13 +146,26 @@ export function DataTableToolbar<TData>({
           </>
         )}
 
-        {/* 🗑️ Delete Button (Global untuk keduanya) */}
-        {table.getFilteredSelectedRowModel().rows.length > 0 && (
-          <Button variant="outline" size="default">
-            <IconTrash className="mr-2 size-4" aria-hidden="true" />
-            Delete ({table.getFilteredSelectedRowModel().rows.length})
+        {/* Clear Filters Button - Show when there are active filters */}
+        {(isFiltered || selectedDate) && (
+          <Button
+            variant="ghost"
+            onClick={handleClearFilters}
+            className="h-8 px-2 lg:px-3"
+          >
+            Reset
+            <IconX className="ml-2 h-4 w-4" />
           </Button>
         )}
+
+        {/* Delete Button - Only for employment and checkclock variants */}
+        {(variant === "employment" || variant === "checkclock") &&
+          table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button variant="outline" size="default">
+              <IconTrash className="mr-2 size-4" aria-hidden="true" />
+              Delete ({table.getFilteredSelectedRowModel().rows.length})
+            </Button>
+          )}
       </div>
     </div>
   );

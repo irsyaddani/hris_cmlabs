@@ -104,7 +104,7 @@ export function DataTableRowActions<TData>({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDelete}
-            className="text-[var(--color-danger-main)] hover:text-[var(--color-danger-hover)] cursor-pointer"
+            className="text-danger-main hover:text-danger-hover cursor-pointer"
           >
             Delete
           </DropdownMenuItem>
