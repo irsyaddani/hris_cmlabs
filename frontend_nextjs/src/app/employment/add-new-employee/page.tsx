@@ -79,7 +79,7 @@ export default function AddNewEmployeePage() {
         }
 
         setSuccess("Data karyawan berhasil disimpan!");
-        router.push("/dashboard/employment/");
+        router.push("/employment/");
         form.reset();
       } catch (jsonError) {
         console.error("Response is not valid JSON:", jsonError);
