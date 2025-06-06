@@ -15,6 +15,8 @@ use App\Http\Controllers\API\ClockSettingsController;
 Route::controller(AuthController::class)->group(function () {
     Route::post('/signup', 'signup');
     Route::post('/login', 'login');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 
@@ -48,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
+
+
+
 // routes/api.php
 Route::get('/checkclocks', [CheckClockController::class, 'index']);
 Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
