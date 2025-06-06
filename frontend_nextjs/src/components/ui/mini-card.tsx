@@ -12,7 +12,7 @@ interface MiniCardProps {
   icon?: TablerIcon;
   title: string;
   value: string;
-  description: string;
+  description?: string;
 }
 
 export function MiniCard({

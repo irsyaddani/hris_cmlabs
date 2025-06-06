@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { UserProvider } from "../lib/user-context"; // Add this import
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,7 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} antialiased`}>
+        <UserProvider>
+          {" "}
+          {/* Add this wrapper */}
+          {children}
+        </UserProvider>
+      </body>
     </html>
   );
 }

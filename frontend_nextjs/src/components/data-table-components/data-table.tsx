@@ -29,7 +29,12 @@ import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";
 
 // ✅ Tambahkan tipe untuk toolbarVariant
-type ToolbarVariant = "employment" | "checkclock" | "billing";
+type ToolbarVariant =
+  | "employment"
+  | "checkclock"
+  | "billing"
+  | "clockin"
+  | "clock-history";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -91,11 +96,18 @@ export function DataTable<TData, TValue>({
               ? "Attendance Monitor"
               : toolbarVariant === "billing"
               ? "Billing History"
-              : "Employee List"}
+              : toolbarVariant === "employment"
+              ? "Employee List"
+              : toolbarVariant === "clockin"
+              ? "Today's Clockin"
+              : "Checkclock history"}
           </h1>
           {/* Tanggal jika variant checkclock */}
-          {toolbarVariant === "checkclock" && (
-            <p className="text-sm font-reguler text-muted-foreground">{`${formattedDate} (Today)`}</p>
+          {(toolbarVariant === "checkclock" ||
+            toolbarVariant === "clockin") && (
+            <p className="text-sm font-reguler text-muted-foreground">
+              {`${formattedDate} (Today)`}
+            </p>
           )}
         </div>
 
