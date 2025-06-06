@@ -16,7 +16,7 @@ export interface NavMainProps {
     url: string;
     icon?: TablerIcon;
   }[];
-  activePath?: string; // Add activePath to the props
+  activePath?: string | null; // Add activePath to the props
 }
 
 export function NavMain({ items, activePath }: NavMainProps) {

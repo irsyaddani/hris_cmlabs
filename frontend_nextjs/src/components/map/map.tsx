@@ -17,7 +17,7 @@ interface MapsProps {
 export default function Maps({
   position = { lat: -7.9546738, lng: 112.6322144 },
   onPositionChange,
-  height = "180px",
+  height = "320px",
 }: MapsProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 

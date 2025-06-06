@@ -283,7 +283,7 @@ export function SettingSheet({ children }: SettingsSheetProps) {
               <Button
                 size="default"
                 variant="default"
-                className="gap-2 bg-[var(--color-primary-700)] text-white hover:bg-[var(--color-primary-800)]"
+                className="gap-2 bg-color-primary-900 text-white hover:bg-color-primary-700"
               >
                 Simpan
               </Button>

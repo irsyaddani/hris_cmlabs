@@ -21,7 +21,12 @@ import { SettingSheet } from "../setting-sheet";
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  variant?: "employment" | "checkclock" | "billing";
+  variant?:
+    | "employment"
+    | "checkclock"
+    | "billing"
+    | "clockin"
+    | "clock-history";
 }
 
 export function DataTableToolbar<TData>({
@@ -93,13 +98,16 @@ export function DataTableToolbar<TData>({
         )}
 
         {/* 📅 Date Picker - Only for checkclock and billing variants */}
-        {(variant === "checkclock" || variant === "billing") && (
-          <SimpleDatePicker
-            onDateSelect={handleDateFilter}
-            placeholder="Filter by date"
-            className="h-9"
-          />
-        )}
+        {(variant === "checkclock" ||
+          variant === "billing" ||
+          variant === "clock-history") &&
+          (variant === "billing" || variant === "clock-history") && (
+            <SimpleDatePicker
+              onDateSelect={handleDateFilter}
+              placeholder="Filter by date"
+              className="h-9"
+            />
+          )}
 
         {/* ✨ Conditionally Render Buttons Based on Variant */}
         {variant === "employment" && (

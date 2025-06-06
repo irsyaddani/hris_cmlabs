@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Row } from "@tanstack/react-table";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,7 @@ export function DataTableRowActions<TData>({
 
   return (
     <>
-      <DropdownMenu>
+      {/* <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -109,13 +110,27 @@ export function DataTableRowActions<TData>({
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu> */}
 
-      {variant === "checkclock" && (
-        <DetailsSheet
-          open={openSheet}
-          onOpenChange={handleSheetChange}
-          attendanceStatus={data.status}
+      {/* {variant === "checkclock" && (
+        <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} />
+      )} */}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+          >
+            <IconDots className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
+          <DropdownMenuSeparator />
+          {variant === "checkclock" ? (
+            <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} attendanceStatus={data.status}
           reason={data.reason}
           proofFile={data.proofFile}
           name={data.name}
@@ -124,9 +139,29 @@ export function DataTableRowActions<TData>({
           clockOut={data.clockOut}
           workHours={data.workHours}
           startDate={data.startDate}
-          endDate={data.endDate}
-        />
-      )}
+          endDate={data.endDate}>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault(); // biar dropdown nggak auto close
+                  handleDetailsClick();
+                }}
+              >
+                Details
+              </DropdownMenuItem>
+            </DetailsSheet>
+          ) : (
+            <DropdownMenuItem onClick={handleDetailsClick}>
+              Details
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={handleDelete}
+            className="text-danger-main hover:text-danger-hover cursor-pointer"
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 }
