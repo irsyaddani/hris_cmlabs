@@ -1,18 +1,21 @@
 "use client";
 
+import axios from "axios";
+import { z } from "zod";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
-import { TextField } from "@/components/form/text-field";
+import { TextFieldIcon } from "@/components/form/text-field-icon";
 import { SelectField } from "@/components/form/select-field";
 import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import { differenceInYears } from "date-fns"; // For eligibility check
+import { IconHelpCircle } from "@tabler/icons-react"; // Tooltip icon
+import { TooltipHelper } from "@/components/ui/tooltip-helper"; // Assuming this is your tooltip component
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
@@ -20,7 +23,7 @@ export default function EditEmployeePage() {
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Temporary for testing
   const router = useRouter();
 
   const form = useForm<EmployeeFormValues>({
@@ -60,15 +63,26 @@ export default function EditEmployeePage() {
           bank: data.bank,
           accountNumber: data.accountNumber,
           bankAccountName: data.bankAccountName,
+          annualLeave: data.annualLeave || null, // Handle null/undefined
         });
       } catch (err) {
         console.error(err);
-        setError("Gagal mengambil data karyawan.");
+        setError("Failed to retrieve employee data.");
       }
     };
 
     fetchEmployee();
   }, [id, form]);
+
+  // Function to check eligibility for annual leave
+  const isEligibleForAnnualLeave = (
+    joinDate: Date | null | undefined
+  ): boolean => {
+    if (!joinDate) return false;
+    const today = new Date();
+    const yearsWorked = differenceInYears(today, joinDate);
+    return yearsWorked >= 1;
+  };
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true);
@@ -88,6 +102,9 @@ export default function EditEmployeePage() {
             ...data,
             birthDate: data.birthDate?.toISOString().split("T")[0],
             joinDate: data.joinDate?.toISOString().split("T")[0],
+            annualLeave: isEligibleForAnnualLeave(data.joinDate)
+              ? data.annualLeave
+              : null,
           }),
         }
       );
@@ -95,19 +112,23 @@ export default function EditEmployeePage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.message || "Gagal memperbarui data.");
+        setError(result.message || "Failed to updating data.");
         return;
       }
 
-      setSuccess("Data karyawan berhasil diperbarui!");
-      router.push("/dashboard/employment");
+      // On success, redirect to detail page with success parameter
+      router.push(`/employment/employee-detail/${id}?success=edit-success`);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Terjadi kesalahan saat memperbarui data.");
+      setError("Error occurred while updating the data.");
     } finally {
       setLoading(false);
     }
   };
+
+  // Get form values for eligibility check
+  const { watch } = form;
+  const joinDate = watch("joinDate");
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
@@ -117,14 +138,18 @@ export default function EditEmployeePage() {
             <div className="grid grid-cols-2 gap-7">
               <div className="flex flex-col space-y-4">
                 <div className="flex space-x-3">
-                  <TextField label="First Name" name="firstName" required />
-                  <TextField label="Last Name" name="lastName" required />
+                  <TextFieldIcon label="First Name" name="firstName" required />
+                  <TextFieldIcon label="Last Name" name="lastName" required />
                 </div>
                 <div className="flex space-x-3">
-                  <TextField label="Birth Place" name="birthPlace" required />
+                  <TextFieldIcon
+                    label="Birth Place"
+                    name="birthPlace"
+                    required
+                  />
                   <DatePicker label="Birth Date" name="birthDate" required />
                 </div>
-                <TextField label="NIK" name="nik" required />
+                <TextFieldIcon label="NIK" name="nik" required />
                 <SelectField
                   label="Gender"
                   name="gender"
@@ -154,8 +179,17 @@ export default function EditEmployeePage() {
                     { label: "Doctorate (S3)", value: "doctorate" },
                   ]}
                 />
-                <TextField label="Email" name="email" type="email" required />
-                <TextField label="Mobile Number" name="mobileNumber" required />
+                <TextFieldIcon
+                  label="Email"
+                  name="email"
+                  type="email"
+                  required
+                />
+                <TextFieldIcon
+                  label="Mobile Number"
+                  name="mobileNumber"
+                  required
+                />
               </div>
             </div>
           </FormSection>
@@ -212,6 +246,34 @@ export default function EditEmployeePage() {
                     { label: "Surabaya", value: "surabaya" },
                   ]}
                 />
+                <TextFieldIcon
+                  label="Annual Leave"
+                  name="annualLeave"
+                  type="number"
+                  required={isEligibleForAnnualLeave(joinDate)}
+                  placeholder={
+                    !isEligibleForAnnualLeave(joinDate)
+                      ? "Available after 1 year of employment"
+                      : ""
+                  }
+                  conditionalField="joinDate"
+                  conditionalCheck={isEligibleForAnnualLeave}
+                  disabledMessage="Available after 1 year of employment"
+                  icon={
+                    <TooltipHelper
+                      trigger={
+                        <IconHelpCircle className="h-4 w-4 text-neutral-600" />
+                      }
+                      content={
+                        <p className="text-sm text-center">
+                          Only available for employees who have worked for at
+                          least 1 year
+                        </p>
+                      }
+                      side="right"
+                    />
+                  }
+                />
               </div>
             </div>
           </FormSection>
@@ -229,14 +291,14 @@ export default function EditEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextField
+                <TextFieldIcon
                   label="Account Number"
                   name="accountNumber"
                   required
                 />
               </div>
               <div className="space-y-4">
-                <TextField
+                <TextFieldIcon
                   label="Bank Account Name"
                   name="bankAccountName"
                   required
@@ -253,14 +315,26 @@ export default function EditEmployeePage() {
           )}
 
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading}
-              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
-            >
-              {loading ? "Menyimpan..." : "Perbarui"}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="cursor-pointer hover:bg-neutral-200"
+                onClick={() => router.push(`/employment/employee-detail/${id}`)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={loading}
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+              >
+                {loading ? "Loading..." : "Save"}
+              </Button>
+            </div>
           </div>
         </form>
       </FormProvider>
