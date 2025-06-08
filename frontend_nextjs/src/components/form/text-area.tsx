@@ -22,7 +22,7 @@ export function TextareaField({
     <div className="grid gap-2 w-full">
       <Label htmlFor={name}>
         {label}
-        {required && <span className="text-red-500">*</span>}
+        {required && <span className="text-danger-main">*</span>}
       </Label>
       <Textarea
         id={name}

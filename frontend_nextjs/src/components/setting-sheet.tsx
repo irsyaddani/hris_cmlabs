@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TextareaField } from "./form/text-area";
 import { Input } from "./ui/input";
-import Maps from "./map/map";
+// import Maps from "./map/map";
 
 interface SettingsSheetProps {
   children: ReactNode; // Trigger element (button, icon, text, etc.)
@@ -167,13 +167,13 @@ export function SettingSheet({ children }: SettingsSheetProps) {
           </div>
 
           <div className="border border-neutral-200 rounded-lg w-full">
-            <Maps
+            {/* <Maps
               position={{
                 lat: parseFloat(locationData.latitude) || DEFAULT_POSITION.lat,
                 lng: parseFloat(locationData.longitude) || DEFAULT_POSITION.lng,
               }}
               onPositionChange={handleMapPositionChange}
-            />
+            /> */}
           </div>
 
           <div className="grid gap-2 w-full">

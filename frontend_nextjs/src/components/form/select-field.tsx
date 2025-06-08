@@ -35,7 +35,7 @@ export function SelectField({
       <Label htmlFor={name}>
         <span>
           {label}
-          {required && <span className="text-red-500">*</span>}
+          {required && <span className="text-danger-main">*</span>}
         </span>
       </Label>
       <Controller
@@ -43,12 +43,16 @@ export function SelectField({
         name={name}
         render={({ field }) => (
           <Select onValueChange={field.onChange} value={field.value}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full cursor-pointer">
               <SelectValue placeholder={`Select ${label}`} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="cursor-pointer">
               {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+                <SelectItem
+                  key={opt.value}
+                  value={opt.value}
+                  className="cursor-pointer"
+                >
                   {opt.label}
                 </SelectItem>
               ))}
@@ -56,7 +60,7 @@ export function SelectField({
           </Select>
         )}
       />
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-danger-main">{error}</p>}
     </div>
   );
 }

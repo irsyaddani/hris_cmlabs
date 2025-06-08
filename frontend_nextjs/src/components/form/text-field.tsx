@@ -31,7 +31,7 @@ export function TextField({
       <Label htmlFor={name}>
         <span>
           {label}
-          {required && <span className="text-red-500">*</span>}
+          {required && <span className="text-danger-main">*</span>}
         </span>
       </Label>
       <Input
@@ -40,7 +40,7 @@ export function TextField({
         placeholder={placeholder || label}
         {...register(name)}
       />
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-danger-main">{error}</p>}
     </div>
   );
 }
