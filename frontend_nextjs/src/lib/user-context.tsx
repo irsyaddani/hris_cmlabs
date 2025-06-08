@@ -15,7 +15,7 @@ interface User {
   name: string;
   email: string;
   avatar: string;
-  role: "admin" | "user";
+  level: "admin" | "user";
 }
 
 // Define NavMain item type - Match exactly with your NavMain component
@@ -68,12 +68,12 @@ const userData: User = {
   name: "Emir Abiyyu",
   email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
-  role: "admin", // Change to "user" for testing user role
+  level: "admin", // Change to "user" for testing user level
 };
 
-// Function to get navigation items based on role
-const getNavMainByRole = (role: User["role"]): NavMainItem[] => {
-  switch (role) {
+// Function to get navigation items based on level
+const getNavMainByLevel = (level: User["level"]): NavMainItem[] => {
+  switch (level) {
     case "admin":
       return adminNavMain;
     case "user":
@@ -86,7 +86,7 @@ const getNavMainByRole = (role: User["role"]): NavMainItem[] => {
 // Create User Context
 interface UserContextType {
   user: User;
-  getNavMainByRole: (role: User["role"]) => NavMainItem[];
+  getNavMainByLevel: (level: User["level"]) => NavMainItem[];
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -94,7 +94,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // User Provider Component
 export function UserProvider({ children }: { children: React.ReactNode }) {
   return (
-    <UserContext.Provider value={{ user: userData, getNavMainByRole }}>
+    <UserContext.Provider value={{ user: userData, getNavMainByLevel }}>
       {children}
     </UserContext.Provider>
   );

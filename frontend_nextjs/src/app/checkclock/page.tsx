@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable } from "../../components/data-table-components/data-table";
-import { columns as checkclockColumns } from "../../components/data-table-components/columns-checkclock";
+import { columns as checkclockColumnsFunction } from "../../components/data-table-components/columns-checkclock";
 import { columns as clockinColumns } from "../../components/data-table-components/columns-clockin";
 import { columns as clockHistoryColumns } from "../../components/data-table-components/columns-clock-history";
 import { useUser } from "@/lib/user-context";
@@ -32,16 +32,25 @@ interface CheckClock {
 function AdminCheckClock({
   data,
   loading,
+  error,
+  updateApproval,
 }: {
   data: CheckClock[];
   loading: boolean;
+  error: string | null;
+  updateApproval: (id: string, status: string) => Promise<void>;
 }) {
+  // Generate columns with the updateApproval function
+  const checkclockColumns = checkclockColumnsFunction(updateApproval);
+
   return (
     <div className="space-y-6">
       <DataTable
         data={loading ? [] : data}
         columns={checkclockColumns}
         toolbarVariant="checkclock"
+        loading={loading}
+        error={error}
       />
     </div>
   );
@@ -91,14 +100,16 @@ function UserCheckClock({ userName }: { userName: string }) {
 
 // Main CheckClock Page
 export default function CheckClockPage() {
-
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const idParam = searchParams.get("id");
-  const numericId = idParam ? parseInt(idParam, 10) : undefined;
 
   const [data, setData] = useState<CheckClock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState<"success" | "error">("success");
 
   // Helper functions (kept from original)
   const createTodayTime = (hour: number, minute: number = 0): string => {
@@ -122,24 +133,6 @@ export default function CheckClockPage() {
     });
   };
 
-  useEffect(() => {
-    // Reset states when role changes
-    if (user.role !== "admin") {
-      setLoading(false);
-      setData([]);
-      return;
-    }
-
-    // Only fetch data for admin
-    setLoading(true);
-    async function fetchCheckClocks() {
-      try {
-        const response = await fetch("http://localhost:8000/api/checkclocks");
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
   async function fetchCheckClocks() {
     try {
       setLoading(true);
@@ -151,13 +144,6 @@ export default function CheckClockPage() {
 
       const result = await response.json();
 
-        setData(result.data);
-      } catch (error: any) {
-        console.error("Gagal mengambil data check clock", error);
-        // Keep data empty on error
-      } finally {
-        setLoading(false);
-        
       if (!result.data || !Array.isArray(result.data)) {
         throw new Error("Format data API tidak sesuai");
       }
@@ -172,24 +158,16 @@ export default function CheckClockPage() {
     }
   }
 
-    fetchCheckClocks();
-  }, [user.role]);
-
-  return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6">
-      {user.role === "admin" ? (
-        <AdminCheckClock data={data} loading={loading} />
-      ) : (
-        <UserCheckClock userName={user.name} />
-      )}
-
   async function updateApproval(id: string, status: string) {
     try {
-      const response = await fetch(`http://localhost:8000/api/checkclock/approval/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ approvalStatus: status }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/checkclock/approval/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ approvalStatus: status }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -199,25 +177,109 @@ export default function CheckClockPage() {
 
       const data = await response.json();
       console.log("Approval updated successfully:", data);
+
+      // Refresh data after successful update
+      fetchCheckClocks();
     } catch (error: any) {
       console.error("Fetch failed:", error.message);
       alert("Gagal mengupdate approval. Silakan coba lagi.");
     }
   }
 
+  // Handle search params safely
   useEffect(() => {
+    // Check for success/failure parameters in URL
+    if (searchParams) {
+      const success = searchParams.get("success");
+      if (success) {
+        switch (success) {
+          case "approval-updated":
+            setAlertType("success");
+            setAlertMessage("Approval updated successfully");
+            setShowSuccessAlert(true);
+            break;
+          case "approval-error":
+            setAlertType("error");
+            setAlertMessage("Failed to update approval");
+            setShowErrorAlert(true);
+            break;
+          case "checkclock-success":
+            setAlertType("success");
+            setAlertMessage("Check clock operation completed successfully");
+            setShowSuccessAlert(true);
+            break;
+          case "checkclock-error":
+            setAlertType("error");
+            setAlertMessage("Failed to complete check clock operation");
+            setShowErrorAlert(true);
+            break;
+        }
+        // Remove the success parameter from URL after showing alert
+        const url = new URL(window.location.href);
+        url.searchParams.delete("success");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Reset states when user level changes
+    if (user.level !== "admin") {
+      setLoading(false);
+      setData([]);
+      return;
+    }
+
+    // Only fetch data for admin
     fetchCheckClocks();
-  }, []);
+  }, [user.level]);
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
-      <DataTable
-        data={data}
-        columns={columns(updateApproval)}
-        toolbarVariant="checkclock"
-        loading={loading}
-        error={error}
-      />
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6">
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <div className="mb-4">
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex justify-between items-center">
+            <div>
+              <strong>Success!</strong> {alertMessage}
+            </div>
+            <button
+              onClick={() => setShowSuccessAlert(false)}
+              className="text-green-600 hover:text-green-800"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {showErrorAlert && (
+        <div className="mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex justify-between items-center">
+            <div>
+              <strong>Error!</strong> {alertMessage}
+            </div>
+            <button
+              onClick={() => setShowErrorAlert(false)}
+              className="text-red-600 hover:text-red-800"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {user.level === "admin" ? (
+        <AdminCheckClock
+          data={data}
+          loading={loading}
+          error={error}
+          updateApproval={updateApproval}
+        />
+      ) : (
+        <UserCheckClock userName={user.name} />
+      )}
     </div>
   );
 }
