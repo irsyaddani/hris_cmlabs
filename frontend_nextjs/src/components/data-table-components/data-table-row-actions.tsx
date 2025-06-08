@@ -130,16 +130,20 @@ export function DataTableRowActions<TData>({
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
           {variant === "checkclock" ? (
-            <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} attendanceStatus={data.status}
-          reason={data.reason}
-          proofFile={data.proofFile}
-          name={data.name}
-          position={data.position}
-          clockIn={data.clockIn}
-          clockOut={data.clockOut}
-          workHours={data.workHours}
-          startDate={data.startDate}
-          endDate={data.endDate}>
+            <DetailsSheet
+              open={openSheet}
+              onOpenChange={handleSheetChange}
+              attendanceStatus={data.status}
+              reason={data.reason}
+              proofFile={data.proofFile}
+              name={data.name}
+              position={data.position}
+              clockIn={data.clockIn}
+              clockOut={data.clockOut}
+              workHours={data.workHours}
+              startDate={data.startDate}
+              endDate={data.endDate}
+            >
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault(); // biar dropdown nggak auto close

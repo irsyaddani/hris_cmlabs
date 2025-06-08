@@ -122,8 +122,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
-  const { user, getNavMainByRole } = useUser();
-  const navMainItems = getNavMainByRole(user.role);
+  const { user, getNavMainByLevel } = useUser();
+  const navMainItems = getNavMainByLevel(user.level);
 
   return (
     <Sidebar collapsible="icon" {...props}>

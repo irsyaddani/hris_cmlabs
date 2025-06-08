@@ -17,6 +17,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { SettingSheet } from "../setting-sheet";
+import router from "next/router";
 
 // Tipe untuk variant
 interface DataTableToolbarProps<TData> {
@@ -141,7 +142,7 @@ export function DataTableToolbar<TData>({
 
         {variant === "checkclock" && (
           <>
-            <SettingSheet>
+            {/* <SettingSheet>
               <Button
                 size="default"
                 variant="outline"
@@ -150,7 +151,17 @@ export function DataTableToolbar<TData>({
                 <IconSettings className="h-4 w-4" />
                 Settings
               </Button>
-            </SettingSheet>
+            </SettingSheet> */}
+            <Link href="/checkclock/clock-hours-setting">
+              <Button
+                size="default"
+                variant="outline"
+                className="gap-2 hover:bg-neutral-200 cursor-pointer"
+              >
+                <IconSettings className="h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
           </>
         )}
 
