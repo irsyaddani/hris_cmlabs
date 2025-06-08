@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -134,4 +139,80 @@ class AuthController extends Controller
         ]);
     }
 
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $existing = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        if ($existing && Carbon::parse($existing->created_at)->diffInMinutes(now()) < 2) {
+            return response()->json([
+                'message' => 'Link sudah dikirim sebelumnya. Silakan cek email Anda.',
+            ], 429);
+        }
+
+        $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => Carbon::now()
+            ]
+        );
+
+        $resetUrl = config('app.frontend_url') . '/auth/reset-password?email=' . urlencode($request->email) . '&token=' . $token;
+
+        Mail::raw("Klik link ini untuk reset password Anda:\n\n" . $resetUrl, function ($message) use ($request) {
+            $message->to($request->email)
+                    ->subject('Reset Password HRIS App');
+        });
+
+        return response()->json([
+            'message' => 'Link reset password berhasil dikirim ke email.'
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required|string',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/[A-Z]/',       // huruf besar
+                'regex:/[a-z]/',       // huruf kecil
+                'regex:/[^A-Za-z0-9]/' // karakter khusus
+            ],
+        ]);
+
+        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        if (!$record) {
+            return response()->json(['message' => 'Token tidak ditemukan.'], 404);
+        }
+
+        if (!Hash::check($request->token, $record->token)) {
+            return response()->json(['message' => 'Token tidak valid.'], 400);
+        }
+
+        if (Carbon::parse($record->created_at)->addHours(24)->isPast()) {
+            return redirect()->to(config('app.frontend_url') . '/auth/link-expired');
+        }
+
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return response()->json([
+            'message' => 'Password berhasil direset.',
+        ]);
+    }
 }

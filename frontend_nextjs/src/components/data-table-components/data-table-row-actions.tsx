@@ -26,18 +26,17 @@ export function DataTableRowActions<TData>({
   row,
   variant,
 }: DataTableRowActionsProps<TData>) {
-  // ↑ DIPERBAIKI: Tambahkan { untuk membuka function body
-
   const router = useRouter();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const id = (row.original as any).id;
+  const data = row.original as any;
+  const id = data.id;
+
   const detailsHref =
     variant === "employment"
       ? `/employment/employee-details?id=${id}`
       : `/checkclock?id=${id}`;
 
-  // DIPERBAIKI: Hapus duplikasi function
   async function handleDelete() {
     if (!confirm("Yakin ingin menghapus data ini?")) return;
 
@@ -75,7 +74,6 @@ export function DataTableRowActions<TData>({
     }
   }
 
-  // DIPERBAIKI: Implementasi proper untuk handleDetailsClick
   function handleDetailsClick() {
     if (variant === "checkclock") {
       setOpenSheet(true);
@@ -102,20 +100,9 @@ export function DataTableRowActions<TData>({
         <DropdownMenuContent align="end" className="w-[160px]">
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
-          {variant === "checkclock" ? (
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                handleDetailsClick();
-              }}
-            >
-              Details
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem onClick={handleDetailsClick}>
-              Details
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={handleDetailsClick}>
+            Details
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDelete}
             className="text-danger-main hover:text-danger-hover cursor-pointer"
@@ -143,7 +130,16 @@ export function DataTableRowActions<TData>({
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
           {variant === "checkclock" ? (
-            <DetailsSheet open={openSheet} onOpenChange={handleSheetChange}>
+            <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} attendanceStatus={data.status}
+          reason={data.reason}
+          proofFile={data.proofFile}
+          name={data.name}
+          position={data.position}
+          clockIn={data.clockIn}
+          clockOut={data.clockOut}
+          workHours={data.workHours}
+          startDate={data.startDate}
+          endDate={data.endDate}>
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault(); // biar dropdown nggak auto close

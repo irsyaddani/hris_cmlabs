@@ -14,6 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    // <AuthGuard>
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -29,5 +30,6 @@ export default function DashboardLayout({
         </div>
       </SidebarInset>
     </SidebarProvider>
+    // </AuthGuard>
   );
 }

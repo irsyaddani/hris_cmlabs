@@ -106,26 +106,27 @@ export default function AddNewEmployeePage() {
 
         if (!response.ok) {
           console.error("Backend validation error or other:", json);
-          setError(json.message || "Gagal menyimpan data.");
+          setError(json.message || "Failed to save data.");
           return;
         }
 
         // Success: Redirect with success parameter
-        router.push("/dashboard/employment/?success=employee-added");
+        setShowSuccessAlert(true); // Show success alert
+        router.push("/employment/?success=employee-added");
       } catch (jsonError) {
         console.error("Response is not valid JSON:", jsonError);
         setError("Respons server tidak valid JSON.");
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Terjadi kesalahan saat mengirim data.");
+      setError("An error occure while try sending the data.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
       <UploadProfile />
 
       <FormProvider {...form}>
@@ -291,6 +292,7 @@ export default function AddNewEmployeePage() {
               title="Error"
               message={error}
               onClose={() => setError(null)}
+              className="fixed bottom-6 right-6"
             />
           )}
           {showSuccessAlert && (
@@ -299,6 +301,7 @@ export default function AddNewEmployeePage() {
               title="Success!"
               message="Employee added successfully"
               onClose={() => setShowSuccessAlert(false)}
+              className="fixed bottom-6 right-6"
             />
           )}
 

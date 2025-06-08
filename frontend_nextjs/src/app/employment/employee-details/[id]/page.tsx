@@ -83,8 +83,14 @@ const branchlabels: Record<string, string> = {
   surabaya: "Surabaya",
 };
 
+// Define the params type for the dynamic route
+type Params = {
+  id: string;
+};
+
 export default function EmployeeDetailsPage() {
-  const { id } = useParams();
+  const params = useParams<Params>(); // Type the useParams hook with the Params type
+  const id = params?.id || ""; // Provide a default value or handle null
   const router = useRouter();
   const searchParams = useSearchParams();
   const [employee, setEmployee] = useState<Employee | null>(null);

@@ -2,9 +2,10 @@
 
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthFormConfirm } from "@/components/ui/auth-form-confirm";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 export default function LinkExpiredPage() {
+  const router = useRouter();
   return (
     <AuthLayout>
       <div className="flex justify-center items-center min-h-screen">

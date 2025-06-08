@@ -3,7 +3,7 @@
 import axios from "axios";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
@@ -12,27 +12,37 @@ import { SelectField } from "@/components/form/select-field";
 import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { differenceInYears } from "date-fns"; // For eligibility check
 import { IconHelpCircle } from "@tabler/icons-react"; // Tooltip icon
 import { TooltipHelper } from "@/components/ui/tooltip-helper"; // Assuming this is your tooltip component
+import { AlertMessage } from "@/components/ui/alert-message"; // For success/error messages
+
+// Define the params type for the dynamic route
+type Params = {
+  id: string;
+};
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function EditEmployeePage() {
-  const { id } = useParams();
+  const params = useParams<Params>(); // Type the useParams hook with the Params type
+  const id = params?.id || ""; // Provide a default value or handle null
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null); // Temporary for testing
-  const router = useRouter();
+  const [success, setSuccess] = useState<string | null>(null); // For success alert
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
   });
 
-  const token = localStorage.getItem("token");
+  // Token diambil dari localStorage
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
+    if (!id) return; // Kalau tidak ada id, hentikan
+
     const fetchEmployee = async () => {
       try {
         const res = await axios.get(
@@ -43,6 +53,7 @@ export default function EditEmployeePage() {
             },
           }
         );
+
         const data = res.data.data;
 
         form.reset({
@@ -72,7 +83,7 @@ export default function EditEmployeePage() {
     };
 
     fetchEmployee();
-  }, [id, form]);
+  }, [id, form, token]);
 
   // Function to check eligibility for annual leave
   const isEligibleForAnnualLeave = (
@@ -85,6 +96,8 @@ export default function EditEmployeePage() {
   };
 
   const onSubmit = async (data: EmployeeFormValues) => {
+    if (!id) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -131,7 +144,7 @@ export default function EditEmployeePage() {
   const joinDate = watch("joinDate");
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormSection title="Personal Information">
@@ -308,10 +321,22 @@ export default function EditEmployeePage() {
           </FormSection>
 
           {error && (
-            <p className="text-danger-main text-sm font-medium">{error}</p>
+            <AlertMessage
+              type="error"
+              title="Error"
+              message={error}
+              onClose={() => setError(null)}
+              className="fixed bottom-6 right-6"
+            />
           )}
           {success && (
-            <p className="text-success-main text-sm font-medium">{success}</p>
+            <AlertMessage
+              type="success"
+              title="Success!"
+              message={success}
+              onClose={() => setSuccess(null)}
+              className="fixed bottom-6 right-6"
+            />
           )}
 
           <div className="flex justify-end">

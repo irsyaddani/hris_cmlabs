@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import  {RegisterFormSchema, RegisterFormType } from "@/lib/schemas/SignUpFormSchema";
 import { LoginFormSchema, LoginFormType } from "@/lib/schemas/SignInFormSchema";
 import { IdLoginFormSchema, IdLoginFormType } from "@/lib/schemas/SignInIdFormSchema";
+import { ForgotPasswordSchema, ForgotPasswordType } from "@/lib/schemas/PasswordSchema";
+import { ResetPasswordSchema, ResetPasswordType } from "@/lib/schemas/PasswordSchema";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,8 @@ interface AuthFormProps {
   onBack?: () => void;
   title?: string;
   subtitle?: string;
+  email?: string;
+  token?: string;
 }
 
 export function AuthForm({
@@ -32,6 +36,8 @@ export function AuthForm({
   onBack,
   title,
   subtitle,
+  email = "",
+  token = "",
 }: AuthFormProps) {
   const router = useRouter();
   const getSchema = () => {
@@ -42,7 +48,10 @@ export function AuthForm({
         return LoginFormSchema;
       case "idlogin":
         return IdLoginFormSchema;
-      // Tambahkan jika punya schema reset/forgot
+      case "forgot-password":
+        return ForgotPasswordSchema;
+      case "reset-password":
+        return ResetPasswordSchema;
       default:
         return LoginFormSchema;
     }
@@ -53,6 +62,10 @@ export function AuthForm({
     formState: { errors },
   } = useForm<any>({
     resolver: zodResolver(getSchema()),
+    defaultValues: {
+      email: email,
+      token: token,
+    },
   });
 
   const [isAgreed, setIsAgreed] = React.useState(false);
@@ -79,7 +92,7 @@ export function AuthForm({
     if (token && level === "admin") {
       router.replace("/dashboard");
     } else if (token && level === "user") {
-      router.replace("/employee-dashboard");
+      router.replace("/dashboard");
     }
   }, [router]);
 
@@ -89,6 +102,8 @@ export function AuthForm({
     if (type === "login") return handleLogin(data);
     if (type === "idlogin") return handleLogin(data);
     if (type === "signup") return handleSignup(data);
+    if (type === "forgot-password") return handleForgotPassword(data);
+    if (type === "reset-password") return handleResetPassword(data);
     if (onSubmit) return onSubmit(data);
     console.log("Unhandled submit type", type);
   };
@@ -136,7 +151,6 @@ export function AuthForm({
 
   };
 
-
   // Fungsi handle signup
   const handleSignup = async (data: RegisterFormType) => {
     if (!isAgreed) {
@@ -161,6 +175,57 @@ export function AuthForm({
     } catch (error: any) {
       console.error("Signup error", error.response?.data || error.message);
       alert("Signup failed: " + (error.response?.data?.message || "Unknown error"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (data: ForgotPasswordType) => {
+    setIsLoading(true);
+    try {
+      await axios.post(`${API_URL}/api/forgot-password`, {
+        email: data.email,
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+      router.push(`/auth/email-confirm?email=${encodeURIComponent(data.email)}`);
+    } catch (error: any) {
+      alert("Error: " + (error.response?.data?.message || "Unknown error"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (data: ResetPasswordType) => {
+    setIsLoading(true);
+    try {
+      const email = data.email || localStorage.getItem("resetEmail");
+      const token = data.token || localStorage.getItem("resetToken");
+
+      if (!email || !token) {
+        alert("Missing email or token");
+        return;
+      }
+
+      await axios.post(`${API_URL}/api/reset-password`, {
+        email,
+        token,
+        password: data.password,
+        password_confirmation: data.confirmPassword,
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      router.push("/auth/password-confirm");
+    } catch (error: any) {
+      console.error("Reset password error", error.response?.data || error.message);
+      alert("Error: " + (error.response?.data?.message || "Unknown error"));
     } finally {
       setIsLoading(false);
     }

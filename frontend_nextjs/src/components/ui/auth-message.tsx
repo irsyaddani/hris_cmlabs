@@ -28,6 +28,7 @@ export function AuthMessage({ type, title, subtitle }: AuthMessageProps) {
   const handleAction = () => {
     if (type === "email-confirm") {
       window.open("https://mail.google.com", "_blank");
+      router.push("/auth/login");
     } else {
       router.push("/auth/login");
     }
