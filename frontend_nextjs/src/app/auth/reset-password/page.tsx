@@ -2,25 +2,22 @@
 
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthForm } from "@/components/ui/auth-form";
-import router, { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ResetPasswordPage() {
-  const handleResetPassword = (data: { password: string; confirmPassword: string }) => {
-    if (data.password !== data.confirmPassword) {
-      console.error("Passwords do not match");
-      return;
-    }
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-    console.log("New Password:", data.password);
-    // Implement reset password logic here (call API, etc.)
-  };
+  const email = searchParams.get("email") || "";
+  const token = searchParams.get("token") || "";
 
   return (
     <AuthLayout>
       <div className="flex justify-center items-center min-h-screen">
         <AuthForm
           type="reset-password"
-          onSubmit={handleResetPassword}
+          email={email}
+          token={token}
           title="Set New Password"
           subtitle="Enter your new password below to complete the reset process. Ensure it’s strong and secure."
           onBack={() => router.back()}

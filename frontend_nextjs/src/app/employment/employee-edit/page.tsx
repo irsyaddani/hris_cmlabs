@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,34 +12,36 @@ import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function EditEmployeePage() {
-  const { id } = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id"); // Ambil dari query param
+  const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const router = useRouter();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
   });
 
-  const token = localStorage.getItem("token");
+  // Token diambil dari localStorage
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
+    if (!id) return; // Kalau tidak ada id, hentikan
+
     const fetchEmployee = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/employees/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await axios.get(`http://localhost:8000/api/employees/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const data = res.data.data;
 
         form.reset({
@@ -68,29 +70,28 @@ export default function EditEmployeePage() {
     };
 
     fetchEmployee();
-  }, [id, form]);
+  }, [id, form, token]);
 
   const onSubmit = async (data: EmployeeFormValues) => {
+    if (!id) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/employees/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...data,
-            birthDate: data.birthDate?.toISOString().split("T")[0],
-            joinDate: data.joinDate?.toISOString().split("T")[0],
-          }),
-        }
-      );
+      const response = await fetch(`http://localhost:8000/api/employees/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...data,
+          birthDate: data.birthDate?.toISOString().split("T")[0],
+          joinDate: data.joinDate?.toISOString().split("T")[0],
+        }),
+      });
 
       const result = await response.json();
 
@@ -100,7 +101,7 @@ export default function EditEmployeePage() {
       }
 
       setSuccess("Data karyawan berhasil diperbarui!");
-      router.push("/dashboard/employment");
+      router.push("/employment");
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Terjadi kesalahan saat memperbarui data.");
@@ -108,6 +109,10 @@ export default function EditEmployeePage() {
       setLoading(false);
     }
   };
+
+  if (!id) {
+    return <p className="p-6 text-center">ID tidak ditemukan di URL.</p>;
+  }
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
@@ -141,14 +146,8 @@ export default function EditEmployeePage() {
                   name="lastEducation"
                   required
                   options={[
-                    {
-                      label: "High School or Equivalent",
-                      value: "high_school",
-                    },
-                    {
-                      label: "Vocational High School",
-                      value: "vocational_high_school",
-                    },
+                    { label: "High School or Equivalent", value: "high_school" },
+                    { label: "Vocational High School", value: "vocational_high_school" },
                     { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
                     { label: "Master's Degree (S2)", value: "master" },
                     { label: "Doctorate (S3)", value: "doctorate" },
@@ -229,18 +228,10 @@ export default function EditEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextField
-                  label="Account Number"
-                  name="accountNumber"
-                  required
-                />
+                <TextField label="Account Number" name="accountNumber" required />
               </div>
               <div className="space-y-4">
-                <TextField
-                  label="Bank Account Name"
-                  name="bankAccountName"
-                  required
-                />
+                <TextField label="Bank Account Name" name="bankAccountName" required />
               </div>
             </div>
           </FormSection>
@@ -252,7 +243,15 @@ export default function EditEmployeePage() {
             <p className="text-success-main text-sm font-medium">{success}</p>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              onClick={() => router.back()}
+            >
+              Batal
+            </Button>
             <Button
               type="submit"
               size="lg"

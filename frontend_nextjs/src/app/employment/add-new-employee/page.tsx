@@ -96,6 +96,9 @@ export default function AddNewEmployeePage() {
 
         // Success: Redirect with success parameter
         router.push("/dashboard/employment/?success=employee-added");
+<!--         setSuccess("Data karyawan berhasil disimpan!");
+        router.push("/employment/");
+        form.reset(); -->
       } catch (jsonError) {
         console.error("Response is not valid JSON:", jsonError);
         setError("Respons server tidak valid JSON.");

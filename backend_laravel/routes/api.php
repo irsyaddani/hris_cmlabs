@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CheckClockController;
+use App\Http\Controllers\API\ClockSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +15,8 @@ use App\Http\Controllers\CheckClockController;
 Route::controller(AuthController::class)->group(function () {
     Route::post('/signup', 'signup');
     Route::post('/login', 'login');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 
@@ -48,5 +51,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-Route::get('/checkclocks', [CheckClockController::class, 'index']);
 
+
+// routes/api.php
+Route::get('/checkclocks', [CheckClockController::class, 'index']);
+Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
+
+
+
+Route::prefix('checkclock')->group(function () {
+    Route::get('/', [CheckClockController::class, 'index']);
+    Route::PUT('/approval/{id}', [CheckClockController::class, 'updateApproval']);
+});
