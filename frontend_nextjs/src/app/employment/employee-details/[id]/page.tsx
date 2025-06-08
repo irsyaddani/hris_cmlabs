@@ -1,9 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import axios from 'axios';
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
+import { AlertMessage } from "@/components/ui/alert-message";
+import { differenceInYears } from "date-fns"; // Import for eligibility check
 
 interface Employee {
   id: string;
@@ -27,68 +31,75 @@ interface Employee {
   bank: string;
   bankAccountName: string;
   accountNumber: string;
+  annualLeave?: number | null; // Optional field, can be null if not eligible
 }
 
 const bankLabels: Record<string, string> = {
-  bca: 'BCA',
-  bri: 'BRI',
-  mandiri: 'Mandiri',
+  bca: "BCA",
+  bri: "BRI",
+  mandiri: "Mandiri",
 };
 
 const genderLabels: Record<string, string> = {
-  male: 'Male',
-  female: 'Female',
+  male: "Male",
+  female: "Female",
 };
 
 const educationLabels: Record<string, string> = {
-  high_school: 'High School',
-  vocational_high_school: 'Vocational High School',
+  high_school: "High School",
+  vocational_high_school: "Vocational High School",
   bachelor: "Bachelor's Degree (S1/D4)",
   master: "Master's Degree (S2)",
-  doctorate: 'Doctorate (S3)',
+  doctorate: "Doctorate (S3)",
 };
 
 const positionLabels: Record<string, string> = {
-  backend_dev: 'Backend Developer',
-  frontend_dev: 'Frontend Developer',
-  fullstack_dev: 'Fullstack Developer',
-  hr_manager: 'HR Manager',
-  mobile_dev: 'Mobile Developer',
-  project_manager: 'Project Manager',
-  qa_engineer: 'QA Engineer',
-  recruiter: 'Recruiter',
-  ui_designer: 'UI/UX Designer',
+  backend_dev: "Backend Developer",
+  frontend_dev: "Frontend Developer",
+  fullstack_dev: "Fullstack Developer",
+  hr_manager: "HR Manager",
+  mobile_dev: "Mobile Developer",
+  project_manager: "Project Manager",
+  qa_engineer: "QA Engineer",
+  recruiter: "Recruiter",
+  ui_designer: "UI/UX Designer",
 };
 
 const employeeLabels: Record<string, string> = {
-  contract: 'Contract',
-  employee: 'Employee',
-  probation: 'Probation',
+  contract: "Contract",
+  employee: "Employee",
+  probation: "Probation",
 };
 
 const gradeLabels: Record<string, string> = {
-  lead: 'Lead',
-  manager: 'Manager',
-  senior_staff: 'Senior Staff',
-  staff: 'Staff',
+  lead: "Lead",
+  manager: "Manager",
+  senior_staff: "Senior Staff",
+  staff: "Staff",
 };
 
-const branchLabels: Record<string, string> = {
-  malang: 'Malang',
-  surabaya: 'Surabaya',
+const branchlabels: Record<string, string> = {
+  malang: "Malang",
+  surabaya: "Surabaya",
+};
+
+// Define the params type for the dynamic route
+type Params = {
+  id: string;
 };
 
 export default function EmployeeDetailsPage() {
-  const searchParams = useSearchParams();
+  const params = useParams<Params>(); // Type the useParams hook with the Params type
+  const id = params?.id || ""; // Provide a default value or handle null
   const router = useRouter();
-  const id = searchParams.get('id');
+  const searchParams = useSearchParams();
   const [employee, setEmployee] = useState<Employee | null>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    if (!id) return;
-
     axios
       .get(`http://localhost:8000/api/employees/${id}`, {
         headers: {
@@ -99,36 +110,63 @@ export default function EmployeeDetailsPage() {
         setEmployee(res.data.data);
       })
       .catch((err) => {
-        console.error('Failed to fetch employee:', err);
+        console.error("Failed to fetch employee:", err);
       });
-  }, [id]);
+
+    if (searchParams) {
+      const success = searchParams.get("success");
+      if (success === "edit-success") {
+        setShowSuccessAlert(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("success");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [id, searchParams]);
+
+  // Function to check eligibility for annual leave
+  const isEligibleForAnnualLeave = (
+    joinDate: string | null | undefined
+  ): boolean => {
+    if (!joinDate) return false;
+    const today = new Date();
+    const joinDateObj = new Date(joinDate);
+    const yearsWorked = differenceInYears(today, joinDateObj);
+    return yearsWorked >= 1;
+  };
 
   const handleDelete = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data karyawan ini?')) return;
-
     try {
-      const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:8000/api/employees/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      alert('Data karyawan berhasil dihapus.');
-      router.push('/employment');
+      setShowDeleteDialog(false);
+      router.push("/employment?success=delete-success"); // Redirect with success param
     } catch (error) {
-      console.error('Gagal menghapus data karyawan:', error);
-      alert('Terjadi kesalahan saat menghapus data.');
+      console.error("Failed to delete employee data:", error);
+      setDeleteError("An error occurred while deleting data.");
     }
   };
 
-  if (!id) return <p className="p-6">Parameter ID tidak ditemukan di URL.</p>;
   if (!employee) return <p className="p-6">Loading...</p>;
 
   return (
     <div className="min-h-screen p-6 space-y-5">
-      {/* Personal Information */}
+      {showSuccessAlert && (
+        <AlertMessage
+          type="success"
+          title="Success!"
+          message="Employee data has been updated"
+          onClose={() => setShowSuccessAlert(false)}
+        />
+      )}
+
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Personal Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Personal Information
+        </h3>
         <div className="flex flex-col gap-7">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-16 h-16 bg-gray-400 rounded-full shrink-0" />
@@ -168,16 +206,18 @@ export default function EmployeeDetailsPage() {
             <div>
               <p className="text-sm text-muted-foreground">Last Education</p>
               <p className="text-md font-medium">
-                {educationLabels[employee.lastEducation] || employee.lastEducation}
+                {educationLabels[employee.lastEducation] ||
+                  employee.lastEducation}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Employee Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <h3 className="text-md text-muted-foreground mb-6">Employee Information</h3>
+        <h3 className="text-md text-muted-foreground mb-6">
+          Employee Information
+        </h3>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
           <div>
             <p className="text-sm text-muted-foreground">Position</p>
@@ -198,8 +238,23 @@ export default function EmployeeDetailsPage() {
           <div>
             <p className="text-sm text-muted-foreground">Branch</p>
             <p className="text-md font-medium">
-              {branchLabels[employee.branch] || employee.branch}
+              {branchlabels[employee.branch] || employee.branch}
             </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Annual Leave</p>
+            {isEligibleForAnnualLeave(employee.joinDate) ? (
+              <p className="text-md font-medium">
+                {employee.annualLeave !== null &&
+                employee.annualLeave !== undefined
+                  ? `${employee.annualLeave} days`
+                  : "Not specified"}
+              </p>
+            ) : (
+              <p className="text-md font-medium text-gray-500">
+                Not eligible (requires 1 year of employment)
+              </p>
+            )}
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Grade</p>
@@ -210,9 +265,10 @@ export default function EmployeeDetailsPage() {
         </div>
       </div>
 
-      {/* Bank Information */}
       <div className="border border-neutral-200 rounded-lg p-5 w-full">
-        <div className="text-md text-muted-foreground mb-6">Bank Information</div>
+        <div className="text-md text-muted-foreground mb-6">
+          Bank Information
+        </div>
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
           <div>
             <p className="text-sm text-muted-foreground">Bank</p>
@@ -231,25 +287,44 @@ export default function EmployeeDetailsPage() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-3">
-        <Button
-          variant="destructive"
-          size="lg"
-          className="gap-4 bg-danger-main text-white hover:bg-danger-hover"
-          onClick={handleDelete}
-        >
-          Hapus
-        </Button>
-        <Button
-          size="lg"
-          className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
-          onClick={() =>
-            router.push(`/employment/employee-edit?id=${id}`)
-          }
-        >
-          Edit
-        </Button>
+      <div className="flex justify-end">
+        <div className="flex gap-3">
+          <Button
+            size="lg"
+            className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+            onClick={() =>
+              router.push(`/dashboard/employment/employee-edit/${id}`)
+            }
+          >
+            Edit data
+          </Button>
+          <ConfirmDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            trigger={
+              <Button
+                variant="destructive"
+                size="lg"
+                className="gap-4 bg-danger-main text-white hover:bg-danger-hover"
+              >
+                Delete
+              </Button>
+            }
+            title="Are you sure want to delete this employee?"
+            description={
+              <>
+                This action cannot be undone and will remove all related data
+                permanently.
+              </>
+            }
+            confirmText="Delete"
+            cancelText="No, cancel"
+            confirmClassName="bg-danger-main text-white hover:bg-danger-hover"
+            cancelClassName="hover:bg-neutral-200"
+            onConfirm={handleDelete}
+            error={deleteError}
+          />
+        </div>
       </div>
     </div>
   );

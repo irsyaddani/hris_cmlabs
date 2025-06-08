@@ -1,46 +1,58 @@
 "use client";
 
+import axios from "axios";
+import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
-import { TextField } from "@/components/form/text-field";
+import { TextFieldIcon } from "@/components/form/text-field-icon";
 import { SelectField } from "@/components/form/select-field";
 import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import { differenceInYears } from "date-fns"; // For eligibility check
+import { IconHelpCircle } from "@tabler/icons-react"; // Tooltip icon
+import { TooltipHelper } from "@/components/ui/tooltip-helper"; // Assuming this is your tooltip component
+import { AlertMessage } from "@/components/ui/alert-message"; // For success/error messages
+
+// Define the params type for the dynamic route
+type Params = {
+  id: string;
+};
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function EditEmployeePage() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id"); // Ambil dari query param
+  const params = useParams<Params>(); // Type the useParams hook with the Params type
+  const id = params?.id || ""; // Provide a default value or handle null
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // For success alert
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
   });
 
   // Token diambil dari localStorage
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
     if (!id) return; // Kalau tidak ada id, hentikan
 
     const fetchEmployee = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/employees/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await axios.get(
+          `http://localhost:8000/api/employees/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = res.data.data;
 
@@ -62,15 +74,26 @@ export default function EditEmployeePage() {
           bank: data.bank,
           accountNumber: data.accountNumber,
           bankAccountName: data.bankAccountName,
+          annualLeave: data.annualLeave || null, // Handle null/undefined
         });
       } catch (err) {
         console.error(err);
-        setError("Gagal mengambil data karyawan.");
+        setError("Failed to retrieve employee data.");
       }
     };
 
     fetchEmployee();
   }, [id, form, token]);
+
+  // Function to check eligibility for annual leave
+  const isEligibleForAnnualLeave = (
+    joinDate: Date | null | undefined
+  ): boolean => {
+    if (!joinDate) return false;
+    const today = new Date();
+    const yearsWorked = differenceInYears(today, joinDate);
+    return yearsWorked >= 1;
+  };
 
   const onSubmit = async (data: EmployeeFormValues) => {
     if (!id) return;
@@ -80,56 +103,66 @@ export default function EditEmployeePage() {
     setSuccess(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/employees/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...data,
-          birthDate: data.birthDate?.toISOString().split("T")[0],
-          joinDate: data.joinDate?.toISOString().split("T")[0],
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/employees/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...data,
+            birthDate: data.birthDate?.toISOString().split("T")[0],
+            joinDate: data.joinDate?.toISOString().split("T")[0],
+            annualLeave: isEligibleForAnnualLeave(data.joinDate)
+              ? data.annualLeave
+              : null,
+          }),
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.message || "Gagal memperbarui data.");
+        setError(result.message || "Failed to updating data.");
         return;
       }
 
-      setSuccess("Data karyawan berhasil diperbarui!");
-      router.push("/employment");
+      // On success, redirect to detail page with success parameter
+      router.push(`/employment/employee-detail/${id}?success=edit-success`);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Terjadi kesalahan saat memperbarui data.");
+      setError("Error occurred while updating the data.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!id) {
-    return <p className="p-6 text-center">ID tidak ditemukan di URL.</p>;
-  }
+  // Get form values for eligibility check
+  const { watch } = form;
+  const joinDate = watch("joinDate");
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormSection title="Personal Information">
             <div className="grid grid-cols-2 gap-7">
               <div className="flex flex-col space-y-4">
                 <div className="flex space-x-3">
-                  <TextField label="First Name" name="firstName" required />
-                  <TextField label="Last Name" name="lastName" required />
+                  <TextFieldIcon label="First Name" name="firstName" required />
+                  <TextFieldIcon label="Last Name" name="lastName" required />
                 </div>
                 <div className="flex space-x-3">
-                  <TextField label="Birth Place" name="birthPlace" required />
+                  <TextFieldIcon
+                    label="Birth Place"
+                    name="birthPlace"
+                    required
+                  />
                   <DatePicker label="Birth Date" name="birthDate" required />
                 </div>
-                <TextField label="NIK" name="nik" required />
+                <TextFieldIcon label="NIK" name="nik" required />
                 <SelectField
                   label="Gender"
                   name="gender"
@@ -146,15 +179,30 @@ export default function EditEmployeePage() {
                   name="lastEducation"
                   required
                   options={[
-                    { label: "High School or Equivalent", value: "high_school" },
-                    { label: "Vocational High School", value: "vocational_high_school" },
+                    {
+                      label: "High School or Equivalent",
+                      value: "high_school",
+                    },
+                    {
+                      label: "Vocational High School",
+                      value: "vocational_high_school",
+                    },
                     { label: "Bachelor's Degree (S1/D4)", value: "bachelor" },
                     { label: "Master's Degree (S2)", value: "master" },
                     { label: "Doctorate (S3)", value: "doctorate" },
                   ]}
                 />
-                <TextField label="Email" name="email" type="email" required />
-                <TextField label="Mobile Number" name="mobileNumber" required />
+                <TextFieldIcon
+                  label="Email"
+                  name="email"
+                  type="email"
+                  required
+                />
+                <TextFieldIcon
+                  label="Mobile Number"
+                  name="mobileNumber"
+                  required
+                />
               </div>
             </div>
           </FormSection>
@@ -211,6 +259,34 @@ export default function EditEmployeePage() {
                     { label: "Surabaya", value: "surabaya" },
                   ]}
                 />
+                <TextFieldIcon
+                  label="Annual Leave"
+                  name="annualLeave"
+                  type="number"
+                  required={isEligibleForAnnualLeave(joinDate)}
+                  placeholder={
+                    !isEligibleForAnnualLeave(joinDate)
+                      ? "Available after 1 year of employment"
+                      : ""
+                  }
+                  conditionalField="joinDate"
+                  conditionalCheck={isEligibleForAnnualLeave}
+                  disabledMessage="Available after 1 year of employment"
+                  icon={
+                    <TooltipHelper
+                      trigger={
+                        <IconHelpCircle className="h-4 w-4 text-neutral-600" />
+                      }
+                      content={
+                        <p className="text-sm text-center">
+                          Only available for employees who have worked for at
+                          least 1 year
+                        </p>
+                      }
+                      side="right"
+                    />
+                  }
+                />
               </div>
             </div>
           </FormSection>
@@ -228,38 +304,62 @@ export default function EditEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextField label="Account Number" name="accountNumber" required />
+                <TextFieldIcon
+                  label="Account Number"
+                  name="accountNumber"
+                  required
+                />
               </div>
               <div className="space-y-4">
-                <TextField label="Bank Account Name" name="bankAccountName" required />
+                <TextFieldIcon
+                  label="Bank Account Name"
+                  name="bankAccountName"
+                  required
+                />
               </div>
             </div>
           </FormSection>
 
           {error && (
-            <p className="text-danger-main text-sm font-medium">{error}</p>
+            <AlertMessage
+              type="error"
+              title="Error"
+              message={error}
+              onClose={() => setError(null)}
+              className="fixed bottom-6 right-6"
+            />
           )}
           {success && (
-            <p className="text-success-main text-sm font-medium">{success}</p>
+            <AlertMessage
+              type="success"
+              title="Success!"
+              message={success}
+              onClose={() => setSuccess(null)}
+              className="fixed bottom-6 right-6"
+            />
           )}
 
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              onClick={() => router.back()}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading}
-              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
-            >
-              {loading ? "Menyimpan..." : "Perbarui"}
-            </Button>
+          <div className="flex justify-end">
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="cursor-pointer hover:bg-neutral-200"
+                onClick={() => router.push(`/employment/employee-detail/${id}`)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={loading}
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+              >
+                {loading ? "Loading..." : "Save"}
+              </Button>
+            </div>
           </div>
         </form>
       </FormProvider>

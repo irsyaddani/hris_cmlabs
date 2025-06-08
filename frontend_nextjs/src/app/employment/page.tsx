@@ -13,18 +13,39 @@ export default function EmploymentPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false); // State for error alert
+  const [alertMessage, setAlertMessage] = useState(""); // Dynamic message for alert
+  const [alertType, setAlertType] = useState<"success" | "error">("success"); // Dynamic type
   const searchParams = useSearchParams();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    // Check for success parameter in URL
-    const success = searchParams?.get("success");
-    if (success === "employee-added") {
-      setShowSuccessAlert(true);
-      // Remove the success parameter from URL after showing alert
-      const url = new URL(window.location.href);
-      url.searchParams.delete("success");
-      window.history.replaceState({}, "", url.toString());
+    // Check for success/failure parameters in URL
+    if (searchParams) {
+      const success = searchParams.get("success");
+      if (success) {
+        switch (success) {
+          case "employee-added":
+            setAlertType("success");
+            setAlertMessage("Employee added successfully");
+            setShowSuccessAlert(true);
+            break;
+          case "delete-success":
+            setAlertType("success");
+            setAlertMessage("Employee deleted successfully");
+            setShowSuccessAlert(true);
+            break;
+          case "delete-error":
+            setAlertType("error");
+            setAlertMessage("Failed to delete employee");
+            setShowErrorAlert(true);
+            break;
+        }
+        // Remove the success parameter from URL after showing alert
+        const url = new URL(window.location.href);
+        url.searchParams.delete("success");
+        window.history.replaceState({}, "", url.toString());
+      }
     }
   }, [searchParams]);
 
@@ -49,7 +70,7 @@ export default function EmploymentPage() {
         setData(formatted);
       })
       .catch((err) => {
-        console.error("Gagal fetch data karyawan:", err);
+        console.error("Failed to fetch employee data:", err);
       })
       .finally(() => {
         setLoading(false);
@@ -61,10 +82,19 @@ export default function EmploymentPage() {
       {/* Success Alert */}
       {showSuccessAlert && (
         <AlertMessage
-          type="success"
+          type={alertType}
           title="Success!"
-          message="Data saved successfully"
+          message={alertMessage}
           onClose={() => setShowSuccessAlert(false)}
+        />
+      )}
+      {/* Error Alert */}
+      {showErrorAlert && (
+        <AlertMessage
+          type={alertType}
+          title="Error"
+          message={alertMessage}
+          onClose={() => setShowErrorAlert(false)}
         />
       )}
 

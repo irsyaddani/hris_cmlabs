@@ -1,12 +1,12 @@
-// AddNewEmployeePage.tsx
 "use client";
 
+import { z } from "zod";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
-import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Import useEffect from react
 
+import UploadProfile from "@/components/ui/upload-profile";
 import { DatePicker } from "@/components/form/date-picker";
 import { FormSection } from "@/components/form/form-section";
 import { SelectField } from "@/components/form/select-field";
@@ -14,17 +14,22 @@ import { TextField } from "@/components/form/text-field";
 import { Button } from "@/components/ui/button";
 import { AlertMessage } from "@/components/ui/alert-message";
 import { useRouter } from "next/navigation";
-import UploadProfile from "@/components/ui/upload-profile";
 import { IconHelpCircle } from "@tabler/icons-react";
 import { TooltipHelper } from "@/components/ui/tooltip-helper";
 import { TextFieldIcon } from "@/components/form/text-field-icon";
 import { differenceInYears } from "date-fns";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation"; // For handling success/failure params
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function AddNewEmployeePage() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // To handle success/failure params
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false); // For add success
+
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
@@ -48,9 +53,6 @@ export default function AddNewEmployeePage() {
     },
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   // Helper function to check if join date is >= 1 year
   const isEligibleForAnnualLeave = (
     joinDate: Date | null | undefined
@@ -61,9 +63,23 @@ export default function AddNewEmployeePage() {
     return yearsWorked >= 1;
   };
 
+  useEffect(() => {
+    // Check for success parameter on mount (for redirect feedback)
+    if (searchParams) {
+      const success = searchParams.get("success");
+      if (success === "employee-added") {
+        setShowSuccessAlert(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("success");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [searchParams]);
+
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true);
     setError(null);
+    setShowSuccessAlert(false); // Reset success alert on new submission
 
     try {
       const token = localStorage.getItem("token");
@@ -90,29 +106,27 @@ export default function AddNewEmployeePage() {
 
         if (!response.ok) {
           console.error("Backend validation error or other:", json);
-          setError(json.message || "Gagal menyimpan data.");
+          setError(json.message || "Failed to save data.");
           return;
         }
 
         // Success: Redirect with success parameter
-        router.push("/dashboard/employment/?success=employee-added");
-<!--         setSuccess("Data karyawan berhasil disimpan!");
-        router.push("/employment/");
-        form.reset(); -->
+        setShowSuccessAlert(true); // Show success alert
+        router.push("/employment/?success=employee-added");
       } catch (jsonError) {
         console.error("Response is not valid JSON:", jsonError);
         setError("Respons server tidak valid JSON.");
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Terjadi kesalahan saat mengirim data.");
+      setError("An error occure while try sending the data.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
       <UploadProfile />
 
       <FormProvider {...form}>
@@ -272,28 +286,36 @@ export default function AddNewEmployeePage() {
             </div>
           </FormSection>
 
-          {/* Only show error alert on this page */}
           {error && (
             <AlertMessage
               type="error"
               title="Error"
               message={error}
               onClose={() => setError(null)}
+              className="fixed bottom-6 right-6"
+            />
+          )}
+          {showSuccessAlert && (
+            <AlertMessage
+              type="success"
+              title="Success!"
+              message="Employee added successfully"
+              onClose={() => setShowSuccessAlert(false)}
+              className="fixed bottom-6 right-6"
             />
           )}
 
           <div className="flex justify-end">
             <div className="flex gap-3">
-              <Link href="/employment">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  className="cursor-pointer hover:bg-neutral-200"
-                >
-                  Cancel
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="cursor-pointer hover:bg-neutral-200"
+                onClick={() => router.push(`/employment`)}
+              >
+                Cancel
+              </Button>
 
               <Button
                 type="submit"

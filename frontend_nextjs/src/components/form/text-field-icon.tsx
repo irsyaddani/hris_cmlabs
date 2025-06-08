@@ -48,6 +48,12 @@ export function TextFieldIcon({
     return conditionalCheck(conditionalValue);
   }, [conditionalField, conditionalCheck, conditionalValue]);
 
+  // Register with valueAsNumber for number type inputs
+  const registerOptions =
+    type === "number"
+      ? { valueAsNumber: true, disabled: !isEnabled }
+      : { disabled: !isEnabled };
+
   return (
     <div className="grid gap-2 w-full">
       <Label htmlFor={name} className="flex items-center gap-2">
@@ -78,14 +84,11 @@ export function TextFieldIcon({
         className={
           !isEnabled ? "bg-muted text-muted-foreground cursor-not-allowed" : ""
         }
-        {...register(name, { disabled: !isEnabled })}
+        {...register(name, registerOptions)}
       />
       {error && isEnabled && (
         <p className="text-sm text-danger-main">{error}</p>
       )}
-      {/* {!isEnabled && disabledMessage && (
-        <p className="text-sm text-muted-foreground">{disabledMessage}</p>
-      )} */}
     </div>
   );
 }
