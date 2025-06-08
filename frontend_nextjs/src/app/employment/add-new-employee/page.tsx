@@ -1,3 +1,4 @@
+// AddNewEmployeePage.tsx
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
@@ -11,7 +12,14 @@ import { FormSection } from "@/components/form/form-section";
 import { SelectField } from "@/components/form/select-field";
 import { TextField } from "@/components/form/text-field";
 import { Button } from "@/components/ui/button";
+import { AlertMessage } from "@/components/ui/alert-message";
 import { useRouter } from "next/navigation";
+import UploadProfile from "@/components/ui/upload-profile";
+import { IconHelpCircle } from "@tabler/icons-react";
+import { TooltipHelper } from "@/components/ui/tooltip-helper";
+import { TextFieldIcon } from "@/components/form/text-field-icon";
+import { differenceInYears } from "date-fns";
+import Link from "next/link";
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
@@ -42,12 +50,20 @@ export default function AddNewEmployeePage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+
+  // Helper function to check if join date is >= 1 year
+  const isEligibleForAnnualLeave = (
+    joinDate: Date | null | undefined
+  ): boolean => {
+    if (!joinDate) return false;
+    const today = new Date();
+    const yearsWorked = differenceInYears(today, joinDate);
+    return yearsWorked >= 1;
+  };
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const token = localStorage.getItem("token");
@@ -61,7 +77,7 @@ export default function AddNewEmployeePage() {
         },
         body: JSON.stringify({
           ...data,
-          birthDate: data.birthDate?.toISOString().split("T")[0], // pastikan format yyyy-mm-dd
+          birthDate: data.birthDate?.toISOString().split("T")[0],
           joinDate: data.joinDate?.toISOString().split("T")[0],
         }),
       });
@@ -78,9 +94,8 @@ export default function AddNewEmployeePage() {
           return;
         }
 
-        setSuccess("Data karyawan berhasil disimpan!");
-        router.push("/dashboard/employment/");
-        form.reset();
+        // Success: Redirect with success parameter
+        router.push("/dashboard/employment/?success=employee-added");
       } catch (jsonError) {
         console.error("Response is not valid JSON:", jsonError);
         setError("Respons server tidak valid JSON.");
@@ -95,6 +110,8 @@ export default function AddNewEmployeePage() {
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+      <UploadProfile />
+
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormSection title="Personal Information">
@@ -106,8 +123,7 @@ export default function AddNewEmployeePage() {
                 </div>
                 <div className="flex space-x-3">
                   <TextField label="Birth Place" name="birthPlace" required />
-                  {/* <DatePicker label="Birth Date" name="birthDate" required /> */}
-                  <DatePicker label="Birth Date" name="birthDate" />
+                  <DatePicker label="Birth Date" name="birthDate" required />
                 </div>
                 <TextField label="NIK" name="nik" required />
                 <SelectField
@@ -187,8 +203,7 @@ export default function AddNewEmployeePage() {
                 />
               </div>
               <div className="space-y-4">
-                {/* <DatePicker label="Join Date" name="joinDate" required /> */}
-                <DatePicker label="Join Date" name="joinDate" />
+                <DatePicker label="Join Date" name="joinDate" required />
                 <SelectField
                   label="Branch"
                   name="branch"
@@ -197,6 +212,29 @@ export default function AddNewEmployeePage() {
                     { label: "Malang", value: "malang" },
                     { label: "Surabaya", value: "surabaya" },
                   ]}
+                />
+                <TextFieldIcon
+                  label="Annual Leave"
+                  name="annualLeave"
+                  required
+                  type="number"
+                  conditionalField="joinDate"
+                  conditionalCheck={isEligibleForAnnualLeave}
+                  disabledMessage="Available after 1 year of employment"
+                  icon={
+                    <TooltipHelper
+                      trigger={
+                        <IconHelpCircle className="h-4 w-4 text-neutral-600" />
+                      }
+                      content={
+                        <p className="text-sm text-center">
+                          Only available for employees who have worked for at
+                          least 1 year
+                        </p>
+                      }
+                      side="right"
+                    />
+                  }
                 />
               </div>
             </div>
@@ -231,20 +269,38 @@ export default function AddNewEmployeePage() {
             </div>
           </FormSection>
 
-          {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
-          {success && (
-            <p className="text-green-600 text-sm font-medium">{success}</p>
+          {/* Only show error alert on this page */}
+          {error && (
+            <AlertMessage
+              type="error"
+              title="Error"
+              message={error}
+              onClose={() => setError(null)}
+            />
           )}
 
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading}
-              className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
-            >
-              {loading ? "Menyimpan..." : "Simpan"}
-            </Button>
+            <div className="flex gap-3">
+              <Link href="/employment">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="cursor-pointer hover:bg-neutral-200"
+                >
+                  Cancel
+                </Button>
+              </Link>
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={loading}
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
+              >
+                {loading ? "Loading..." : "Add employee"}
+              </Button>
+            </div>
           </div>
         </form>
       </FormProvider>

@@ -25,7 +25,7 @@ export default function AttendanceUserPage() {
           <Button
             type="submit"
             size="lg"
-            className="gap-4 bg-primary-900 hover:bg-primary-700"
+            className="gap-4 bg-primary-900 hover:bg-primary-700 cursor-pointer"
           >
             Submit
           </Button>

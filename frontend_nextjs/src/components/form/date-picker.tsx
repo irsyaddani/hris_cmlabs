@@ -8,13 +8,8 @@ import { useFormContext } from "react-hook-form";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 interface DatePickerProps {
@@ -41,67 +36,62 @@ export function DatePicker({
   toYear = new Date().getFullYear() + 1,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const form = useFormContext();
+  const {
+    setValue,
+    watch,
+    register,
+    formState: { errors },
+  } = useFormContext();
 
-  if (!form) {
-    throw new Error("DatePicker must be used within a Form component");
-  }
+  const fieldValue = watch(name);
+  const error = errors[name]?.message as string | undefined;
+
+  // Register the field with react-hook-form
+  const registration = register(name);
 
   return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem className={cn("flex flex-col w-full", className)}>
-          {label && (
-            <FormLabel>
-              {label}
-              {required && <span className="text-red-500 ml-1">*</span>}
-            </FormLabel>
-          )}
-          <Popover open={isOpen} onOpenChange={setIsOpen}>
-            <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant="outline"
-                  disabled={disabled}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !field.value && "text-muted-foreground"
-                  )}
-                >
-                  {field.value ? (
-                    format(field.value, "PPP")
-                  ) : (
-                    <span>{placeholder}</span>
-                  )}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                captionLayout="dropdown"
-                selected={field.value}
-                onSelect={(selectedDate) => {
-                  field.onChange(selectedDate);
-                  setIsOpen(false);
-                }}
-                fromYear={fromYear}
-                toYear={toYear}
-                defaultMonth={field.value}
-                initialFocus
-                disabled={disabled}
-              />
-            </PopoverContent>
-          </Popover>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="grid gap-2 w-full">
+      <Label htmlFor={name}>
+        <span>
+          {label}
+          {required && <span className="text-danger-main">*</span>}
+        </span>
+      </Label>
+
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <div className="relative">
+            <Input
+              id={name}
+              readOnly
+              disabled={disabled}
+              value={fieldValue ? format(fieldValue, "dd/MM/yyyy") : ""}
+              placeholder={placeholder || label}
+              className="cursor-pointer"
+              onClick={() => setIsOpen(true)}
+            />
+            <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            captionLayout="dropdown"
+            selected={fieldValue}
+            onSelect={(selectedDate) => {
+              setValue(name, selectedDate, { shouldValidate: true });
+              setIsOpen(false);
+            }}
+            fromYear={fromYear}
+            toYear={toYear}
+            defaultMonth={fieldValue}
+            initialFocus
+            disabled={disabled}
+          />
+        </PopoverContent>
+      </Popover>
+
+      {error && <p className="text-sm text-danger-main">{error}</p>}
+    </div>
   );
 }

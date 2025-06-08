@@ -1,7 +1,7 @@
 import { AppWindowIcon, CodeIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import Maps from "@/components/map/map";
+// import Maps from "@/components/map/map";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState } from "react";
 import { Textarea } from "../ui/textarea";
 import UploadFile from "../ui/upload-file";
+import CheckclockMap from "../map/checkclock-map";
 
 export function AttendanceTabs() {
   const [selectedWorkType, setselectedWorkType] = useState("wfo");
@@ -57,8 +58,8 @@ export function AttendanceTabs() {
             <div className="grid gap-2 w-full">
               <Label htmlFor="location">Location</Label>
 
-              <div className="border border-neutral-200 rounded-lg w-full">
-                <Maps />
+              <div className=" rounded-lg w-full">
+                <CheckclockMap />
               </div>
             </div>
 

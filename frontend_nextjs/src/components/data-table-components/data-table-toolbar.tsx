@@ -89,7 +89,7 @@ export function DataTableToolbar<TData>({
             {isFiltered && (
               <button
                 onClick={handleClearFilters}
-                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-6 w-6"
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-6 w-6 cursor-pointer"
               >
                 <IconX className="h-4 w-4 text-gray-600" />
               </button>
@@ -114,7 +114,7 @@ export function DataTableToolbar<TData>({
           <>
             <Button
               size="default"
-              className="gap-2 hover:bg-[var(--color-neutral-200)]"
+              className="gap-2 hover:bg-neutral-200 cursor-pointer"
               variant="outline"
             >
               <IconFileExport className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function DataTableToolbar<TData>({
             </Button>
             <Button
               size="default"
-              className="gap-2 hover:bg-[var(--color-neutral-200)]"
+              className="gap-2 hover:bg-neutral-200 cursor-pointer"
               variant="outline"
             >
               <IconFileImport className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function DataTableToolbar<TData>({
             <Link href="/employment/add-new-employee">
               <Button
                 size="default"
-                className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
               >
                 Add Data
               </Button>
@@ -145,7 +145,7 @@ export function DataTableToolbar<TData>({
               <Button
                 size="default"
                 variant="outline"
-                className="gap-2 hover:bg-neutral-200"
+                className="gap-2 hover:bg-neutral-200 cursor-pointer"
               >
                 <IconSettings className="h-4 w-4" />
                 Settings
@@ -159,7 +159,7 @@ export function DataTableToolbar<TData>({
           <Button
             variant="ghost"
             onClick={handleClearFilters}
-            className="h-8 px-2 lg:px-3"
+            className="h-8 px-2 lg:px-3 cursor-pointer"
           >
             Reset
             <IconX className="ml-2 h-4 w-4" />
@@ -169,7 +169,7 @@ export function DataTableToolbar<TData>({
         {/* Delete Button - Only for employment and checkclock variants */}
         {(variant === "employment" || variant === "checkclock") &&
           table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <Button variant="outline" size="default">
+            <Button variant="outline" size="default" className="cursor-pointer">
               <IconTrash className="mr-2 size-4" aria-hidden="true" />
               Delete ({table.getFilteredSelectedRowModel().rows.length})
             </Button>

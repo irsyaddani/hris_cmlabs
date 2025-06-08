@@ -1,0 +1,13 @@
+[
+  {
+    "id": "office1",
+    "name": "CMLABS HQ",
+    "address": "123 Jalan Sudirman, Jakarta, Indonesia",
+    "coordinates": {
+      "latitude": -7.9546738,
+      "longitude": 112.6322144
+    },
+    "radius_meters": 1000,
+    "facility": "Headquarters"
+  }
+]

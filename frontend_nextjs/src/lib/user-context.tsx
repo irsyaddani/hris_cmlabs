@@ -68,7 +68,7 @@ const userData: User = {
   name: "Emir Abiyyu",
   email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
-  role: "user", // Change to "user" for testing user role
+  role: "admin", // Change to "user" for testing user role
 };
 
 // Function to get navigation items based on role
