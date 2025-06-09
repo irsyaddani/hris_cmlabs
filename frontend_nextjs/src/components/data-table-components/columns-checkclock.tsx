@@ -8,10 +8,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { ConfirmDialog } from "../dialogs/confirm-dialog";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
-export function columns(
-  updateApproval: (id: string, status: string) => Promise<void>
-): ColumnDef<Checkclock>[] {
+export function useCheckclockColumns(): ColumnDef<Checkclock>[] {
+  const router = useRouter();
+
+  const updateApproval = async (id: string, status: string) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
+        status_approval: status,
+      });
+      console.log(`Approval updated: ${status}`, response.data);
+      router.refresh();
+      window.location.reload();
+      
+    } catch (err) {
+      console.error("Error updating approval:", err);
+    }
+  };
+
   return [
     {
       id: "select",
@@ -171,8 +187,7 @@ export function columns(
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         const approval = row.getValue("approval") as string;
-        // Konversi id ke string untuk kompatibilitas dengan updateApproval function
-        const id = String(row.original.id);
+        const id = row.original.id as string;
 
         if (status === "permit" || status === "annual leave") {
           if (approval === "pending") {
@@ -323,7 +338,9 @@ export function columns(
 
     {
       id: "actions",
-      cell: ({ row }) => <DataTableRowActions row={row} variant="checkclock" />,
+      cell: ({ row }) => (
+        <DataTableRowActions row={row} variant="checkclock" />
+      ),
     },
   ];
 }
