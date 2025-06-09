@@ -33,13 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
         $employee = $user->employee; // pastikan relasi 'employee' ada di model User
 
         return response()->json([
-            'id'    => $user->id,
+            'id' => $user->id,
             'email' => $user->email,
             'level' => $employee->level ?? null,
         ]);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Employees CRUD
     Route::prefix('/employees')->controller(EmployeeController::class)->group(function () {
         Route::get('/', 'index');
@@ -59,7 +59,7 @@ Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
 
 
 
-Route::prefix('checkclock')->group(function () {
-    Route::get('/', [CheckClockController::class, 'index']);
-    Route::put('/approval/{id}', [CheckClockController::class, 'updateApproval']);
+Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
+    Route::get('/', 'index'); // Ambil semua data
+    Route::put('/approval/{id}', 'updateApproval'); // Update status approval
 });

@@ -24,15 +24,34 @@ class CheckClockController extends Controller
                 }
             }
 
-            $workTime = $this->calculateWorkHours($item->clock_in, $item->clock_out);
+            // Default clockIn dan clockOut
+            $clockIn = $item->clock_in;
+            $clockOut = $item->clock_out;
+
+            // Tambahkan logika auto-clockout jika clockIn ada, clockOut kosong, dan sudah ganti hari
+            if ($clockIn && !$clockOut) {
+                $clockInDate = Carbon::parse($clockIn)->startOfDay(); // hanya tanggal
+                $today = now()->startOfDay();
+
+                if ($today->greaterThan($clockInDate)) {
+                    // Set clockOut ke jam 17:00 pada hari clockIn
+                    $autoClockOut = Carbon::parse($clockInDate)->setTime(17, 0, 0);
+                    $item->clock_out = $autoClockOut;
+                    $item->save(); // SIMPAN PERUBAHAN KE DATABASE
+                    $clockOut = $autoClockOut;
+                }
+            }
+
+            // Hitung work time
+            $workTime = $this->calculateWorkHours($clockIn, $clockOut);
 
             return [
                 'id' => $item->id,
                 'name' => $fullName,
                 'avatarUrl' => $employee?->avatar_url ?? 'https://yourcdn.com/avatars/default.jpg',
                 'position' => $employee?->position ?? '-',
-                'clockIn' => $item->clock_in ? $item->clock_in->format('Y-m-d H:i:s') : null,
-                'clockOut' => $item->clock_out ? $item->clock_out->format('Y-m-d H:i:s') : null,
+                'clockIn' => $clockIn ? Carbon::parse($clockIn)->format('Y-m-d H:i:s') : null,
+                'clockOut' => $clockOut ? Carbon::parse($clockOut)->format('Y-m-d H:i:s') : null,
                 'workHours' => $workTime,
                 'approval' => $item->status_approval ?? '-',
                 'status' => $item->type ?? '-',
@@ -57,34 +76,78 @@ class CheckClockController extends Controller
         return response()->json(['data' => $data]);
     }
 
+
+
     // Method untuk update approval status
     public function updateApproval(Request $request, $id)
     {
-        // Validasi input
+        // Validasi input status_approval
         $validated = $request->validate([
             'status_approval' => 'required|string|in:pending,approved,rejected',
         ]);
 
-        // Cari data CheckClock berdasarkan ID
-        $checkclock = CheckClock::find($id);
+        // Ambil data checkclock + relasi employee
+        $checkclock = CheckClock::with('employee')->find($id);
 
-        // Jika data tidak ditemukan
         if (!$checkclock) {
             return response()->json([
                 'message' => 'CheckClock data not found.',
             ], 404);
         }
 
-        // Update status approval
+        // Hanya izinkan update jika type adalah permit atau annual leave
+        if (!in_array($checkclock->type, ['permit', 'annual leave'])) {
+            return response()->json([
+                'message' => 'Approval can only be updated for permit or annual leave.',
+            ], 400);
+        }
+
+        // Jangan izinkan mengubah status jika sudah final
+        if (in_array($checkclock->status_approval, ['approved', 'rejected'])) {
+            return response()->json([
+                'message' => 'Approval status is already final.',
+            ], 400);
+        }
+
+        // Update status_approval
         $checkclock->status_approval = $validated['status_approval'];
         $checkclock->save();
 
-        // Response sukses
+        // Format data konsisten seperti di index()
+        $employee = $checkclock->employee ?? null;
+        $fullName = '-';
+        if ($employee) {
+            $firstName = $employee->firstName ?? '';
+            $lastName = $employee->lastName ?? '';
+            $fullName = trim($firstName . ' ' . $lastName) ?: '-';
+        }
+
+        $workTime = $this->calculateWorkHours($checkclock->clock_in, $checkclock->clock_out);
+
         return response()->json([
             'message' => 'Approval status updated successfully.',
-            'data' => $checkclock,
+            'data' => [
+                'id' => $checkclock->id,
+                'name' => $fullName,
+                'avatarUrl' => $employee?->avatar_url ?? 'https://yourcdn.com/avatars/default.jpg',
+                'position' => $employee?->position ?? '-',
+                'clockIn' => $checkclock->clock_in ? $checkclock->clock_in->format('Y-m-d H:i:s') : null,
+                'clockOut' => $checkclock->clock_out ? $checkclock->clock_out->format('Y-m-d H:i:s') : null,
+                'workHours' => $workTime,
+                'approval' => $checkclock->status_approval ?? '-',
+                'status' => $checkclock->type ?? '-',
+                'reason' => $checkclock->reason ?? '',
+                'proofFile' => $checkclock->proof_file ? [
+                    'fileName' => basename($checkclock->proof_file),
+                    'fileUrl' => asset('storage/' . $checkclock->proof_file),
+                    'fileType' => $this->getFileMimeType($checkclock->proof_file),
+                ] : null,
+                'startDate' => $checkclock->start_date ? Carbon::parse($checkclock->start_date)->format('Y-m-d') : null,
+                'endDate' => $checkclock->end_date ? Carbon::parse($checkclock->end_date)->format('Y-m-d') : null,
+            ]
         ]);
     }
+
 
     // Hitung durasi kerja (jam, menit)
     private function calculateWorkHours($clockIn, $clockOut)

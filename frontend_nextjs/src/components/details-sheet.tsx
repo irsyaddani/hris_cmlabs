@@ -16,11 +16,14 @@ import { FilePreviewDialog } from "./dialogs/file-preview-dialog";
 import { IconEye, IconFile } from "@tabler/icons-react";
 import DownloadButton from "./ui/download-button";
 import { ConfirmDialog } from "./dialogs/confirm-dialog";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 interface DetailsSheetProps {
   children?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  id: string; 
   attendanceStatus?: string;
   reason?: string;
   proofFile?: {
@@ -37,7 +40,7 @@ interface DetailsSheetProps {
   endDate?: string;
   onApprove?: () => Promise<void>;
   onReject?: () => Promise<void>;
-  approvalStatus?: string; // pending, approved, rejected
+  approvalStatus?: string;
   onApprovalStatusChange?: (newStatus: string) => void;
 }
 
@@ -64,6 +67,7 @@ export function DetailsSheet({
   children,
   open,
   onOpenChange,
+  id,
   attendanceStatus = "-",
   reason = "",
   proofFile = null,
@@ -74,53 +78,40 @@ export function DetailsSheet({
   workHours = null,
   startDate,
   endDate,
-  onApprove,
-  onReject,
   approvalStatus = "pending",
-  onApprovalStatusChange,
+  
 }: DetailsSheetProps) {
-  const [loading, setLoading] = useState(false);
-  const [localApprovalStatus, setLocalApprovalStatus] = useState(approvalStatus);
+  const router = useRouter();
+  const [localApprovalStatus, setLocalApprovalStatus] =
+    useState(approvalStatus);
 
   useEffect(() => {
     setLocalApprovalStatus(approvalStatus);
   }, [approvalStatus]);
 
   const isAnnualLeave = attendanceStatus === "annual leave";
-  const shouldShowProofSection =
-    attendanceStatus === "annual leave" || attendanceStatus === "permit";
+  const shouldShowProofSection = ["annual leave", "permit"].includes(
+    attendanceStatus
+  );
 
-  async function handleApprove() {
-    if (!onApprove) return;
-    setLoading(true);
-    try {
-      await onApprove();
-      setLocalApprovalStatus("approved");
-      onApprovalStatusChange?.("approved");
-      alert("Attendance approved!");
-    } catch {
-      alert("Failed to approve attendance");
-    } finally {
-      setLoading(false);
-    }
+  const updateApproval = async (id: string, status: string, router: ReturnType<typeof useRouter>) => {
+  if (!id || id === "undefined") {
+    console.error("Invalid ID:", id);
+    alert("Gagal mengupdate: ID tidak valid");
+    return;
   }
 
-  async function handleReject() {
-    if (!onReject) return;
-    setLoading(true);
-    try {
-      await onReject();
-      setLocalApprovalStatus("rejected");
-      onApprovalStatusChange?.("rejected");
-      alert("Attendance rejected!");
-    } catch {
-      alert("Failed to reject attendance");
-    } finally {
-      setLoading(false);
-    }
+  try {
+    const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
+      status_approval: status,
+    });
+    console.log("Approval updated:", response.data);
+    window.location.reload();
+  } catch (err) {
+    console.error("Error updating approval:", err);
   }
+};
 
-  const isFinalized = localApprovalStatus === "approved" || localApprovalStatus === "rejected";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -142,20 +133,19 @@ export function DetailsSheet({
               </div>
             </div>
 
-            {/* Tombol Approve & Reject dengan ConfirmDialog */}
             <div className="flex gap-2">
               <ConfirmDialog
                 trigger={
-                  <Button size="sm" variant="outline" disabled={loading || isFinalized}>
+                  <Button size="sm" variant="outline">
                     Reject
                   </Button>
                 }
-                title="Are you sure want to proceed?"
-                description="This action cannot be undone. This will permanently update to employee data."
+                title="Are you sure?"
+                description="This will reject the request permanently."
                 confirmText="Reject"
                 cancelText="Cancel"
-                confirmClassName="bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
-                onConfirm={handleReject}
+                confirmClassName="bg-red-600 text-white hover:bg-red-700"
+                onConfirm={() => updateApproval(id, "rejected", router)}
               />
 
               <ConfirmDialog
@@ -163,18 +153,17 @@ export function DetailsSheet({
                   <Button
                     size="sm"
                     variant="default"
-                    className="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-700)]"
-                    disabled={loading || isFinalized}
+                    className="bg-blue-900 text-white hover:bg-blue-700"
                   >
                     Approve
                   </Button>
                 }
-                title="Are you sure want to proceed?"
-                description="This action cannot be undone. This will permanently update to employee data."
+                title="Are you sure?"
+                description="This will approve the request permanently."
                 confirmText="Approve"
                 cancelText="Cancel"
-                confirmClassName="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
-                onConfirm={handleApprove}
+                confirmClassName="bg-blue-900 text-white hover:bg-blue-800"
+                onConfirm={() => updateApproval(id, "approved", router)}
               />
             </div>
           </div>
@@ -183,7 +172,7 @@ export function DetailsSheet({
             <h3 className="text-md text-muted-foreground mb-6">
               Attendance Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <p className="text-sm text-muted-foreground">Date</p>
                 <p className="text-md font-medium">
@@ -229,6 +218,7 @@ export function DetailsSheet({
                 <p className="text-sm text-muted-foreground">Status</p>
                 <p className="text-md font-medium">{attendanceStatus}</p>
               </div>
+
               {isAnnualLeave && (
                 <>
                   <div>
