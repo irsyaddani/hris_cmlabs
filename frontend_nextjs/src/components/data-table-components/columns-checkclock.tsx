@@ -11,23 +11,19 @@ import { ConfirmDialog } from "../dialogs/confirm-dialog";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-export function useCheckclockColumns(): ColumnDef<Checkclock>[] {
-  const router = useRouter();
+const updateApproval = async (id: string, status: string, router: ReturnType<typeof useRouter>) => {
+  try {
+    const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
+      status_approval: status,
+    });
+    console.log(`Approval updated: ${status}`, response.data);
+    window.location.reload();
+  } catch (err) {
+    console.error("Error updating approval:", err);
+  }
+};
 
-  const updateApproval = async (id: string, status: string) => {
-    try {
-      const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
-        status_approval: status,
-      });
-      console.log(`Approval updated: ${status}`, response.data);
-      router.refresh();
-      window.location.reload();
-      
-    } catch (err) {
-      console.error("Error updating approval:", err);
-    }
-  };
-
+export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkclock>[] {
   return [
     {
       id: "select",
@@ -204,7 +200,7 @@ export function useCheckclockColumns(): ColumnDef<Checkclock>[] {
                   confirmText="Approve"
                   cancelText="Cancel"
                   confirmClassName="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
-                  onConfirm={() => updateApproval(id, "approved")}
+                  onConfirm={() => updateApproval(id, "approved", router)}
                 />
                 <ConfirmDialog
                   trigger={
@@ -217,7 +213,7 @@ export function useCheckclockColumns(): ColumnDef<Checkclock>[] {
                   confirmText="Reject"
                   cancelText="Cancel"
                   confirmClassName="bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
-                  onConfirm={() => updateApproval(id, "rejected")}
+                  onConfirm={() => updateApproval(id, "rejected", router)}
                 />
               </div>
             );
