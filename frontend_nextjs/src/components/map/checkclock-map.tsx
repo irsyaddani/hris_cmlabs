@@ -1,17 +1,11 @@
-// First, install Turf.js in your project:
-// npm install @turf/turf
-// or
-// yarn add @turf/turf
-
 import {
   IconSearch,
   IconCurrentLocation,
   IconMapPinFilled,
 } from "@tabler/icons-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Map, Marker, Source, Layer } from "react-map-gl";
+import { Map, Marker, Source, Layer, MapRef } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-// Add this import for Turf.js
 import * as turf from "@turf/turf";
 
 interface LocationSuggestion {
@@ -24,6 +18,8 @@ interface LocationSuggestion {
     category?: string;
   };
   place_type: string[];
+  matching_text?: string;
+  matching_place_name?: string;
 }
 
 interface CheckclockLocation {
@@ -46,7 +42,7 @@ interface CheckclockMapProps {
 
 export default function CheckclockMap({
   onLocationChange,
-  initialRadius = 500,
+  initialRadius = 250, // Default 250m
 }: CheckclockMapProps) {
   const [viewState, setViewState] = useState({
     longitude: 112.6322144,
@@ -59,32 +55,30 @@ export default function CheckclockMap({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const mapRef = useRef<MapRef | null>(null);
 
   const [currentLocation, setCurrentLocation] = useState<CheckclockLocation>({
     id: "current",
-    name: "Current Location",
+    name: "CMLABS HQ",
     longitude: 112.6322144,
     latitude: -7.9546738,
     radius: initialRadius,
   });
 
-  // NEW: More accurate circle creation using Turf.js
+  const MAPBOX_TOKEN =
+    "pk.eyJ1IjoiYW1hbmRhZmFkaWxhMTEiLCJhIjoiY21iam1vbmJ4MGl0aTJrcTY5c3dwNm54eiJ9.bNz01unwDtQUnX7vBfjp0g";
+
   const createCircleWithTurf = (
     center: [number, number],
     radiusInMeters: number
   ) => {
     try {
-      // Create a point from the center coordinates
       const centerPoint = turf.point(center);
-
-      // Create a circle with the specified radius
-      // Turf expects radius in kilometers, so convert from meters
       const circle = turf.circle(centerPoint, radiusInMeters / 1000, {
-        steps: 64, // Number of points to create the circle (more = smoother)
+        steps: 64,
         units: "kilometers",
       });
-
-      // Return in the format expected by Mapbox
       return {
         type: "Feature" as const,
         properties: {
@@ -93,21 +87,23 @@ export default function CheckclockMap({
         },
         geometry: circle.geometry,
       };
-    } catch (error) {
-      console.error("Error creating circle with Turf.js:", error);
-      // Fallback to the original method if Turf fails
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error creating circle with Turf.js:", error.message);
+      } else {
+        console.error("Error creating circle with Turf.js:", error);
+      }
       return createCircleFallback(center, radiusInMeters);
     }
   };
 
-  // Keep the original method as fallback
   const createCircleFallback = (
     center: [number, number],
     radiusInMeters: number
   ) => {
     const points = 64;
     const coords = [];
-    const earthRadius = 6378137; // WGS84 Earth radius in meters
+    const earthRadius = 6378137;
     const lat = center[1];
     const lng = center[0];
 
@@ -140,70 +136,206 @@ export default function CheckclockMap({
     };
   };
 
-  // IMPROVED: Better search logic
   const searchLocations = useCallback(
     async (query: string) => {
-      if (!query.trim()) {
+      if (!query.trim() || query.length < 2) {
+        console.log("🔍 Search cancelled: query too short or empty");
         setSuggestions([]);
         return;
       }
 
+      console.log(`🔍 Starting search for: "${query}"`);
+
+      if (abortControllerRef.current) {
+        console.log("❌ Cancelling previous search request");
+        abortControllerRef.current.abort();
+      }
+
+      abortControllerRef.current = new AbortController();
+
       setIsSearching(true);
       try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-            query
-          )}.json?` +
+        console.log("📡 Calling Mapbox Suggest API...");
+        const suggestResponse = await fetch(
+          `https://api.mapbox.com/search/searchbox/v1/suggest?` +
             new URLSearchParams({
-              access_token:
-                "pk.eyJ1IjoiYW1hbmRhZmFkaWxhMTEiLCJhIjoiY21iam1vbmJ4MGl0aTJrcTY5c3dwNm54eiJ9.bNz01unwDtQUnX7vBfjp0g",
+              q: query,
+              access_token: MAPBOX_TOKEN,
+              session_token: Date.now().toString(),
               country: "ID",
-              limit: "10", // Increased limit for better results
-              language: "id,en",
+              language: "id",
+              limit: "8",
               proximity: `${currentLocation.longitude},${currentLocation.latitude}`,
-              types: "poi,address,place", // Keep broad types for buildings
-            })
+              types: "place,poi,address,street",
+            }),
+          { signal: abortControllerRef.current.signal }
         );
 
-        if (response.ok) {
-          const data = await response.json();
+        if (!suggestResponse.ok) {
+          throw new Error(`Suggest API error: ${suggestResponse.status}`);
+        }
 
-          // Debug: Log what we're getting
+        const suggestData = await suggestResponse.json();
+        console.log("✅ Suggest API response:", suggestData);
+
+        if (suggestData.suggestions && suggestData.suggestions.length > 0) {
           console.log(
-            "Search results:",
-            data.features.map((f) => ({
-              name: f.place_name,
-              type: f.place_type,
-              category: f.properties?.category,
-              text: f.text,
-            }))
+            `📍 Found ${suggestData.suggestions.length} suggestions, retrieving details...`
           );
 
-          // More inclusive sorting instead of filtering
-          const sortedSuggestions = data.features.sort((a, b) => {
-            // Prioritize POIs and addresses, but don't exclude others
-            const aScore =
-              (a.place_type.includes("poi") ? 3 : 0) +
-              (a.place_type.includes("address") ? 2 : 0) +
-              (a.properties?.category ? 1 : 0);
-            const bScore =
-              (b.place_type.includes("poi") ? 3 : 0) +
-              (b.place_type.includes("address") ? 2 : 0) +
-              (b.properties?.category ? 1 : 0);
-            return bScore - aScore;
-          });
+          const retrievePromises = suggestData.suggestions.map(
+            async (suggestion: any, index: number) => {
+              try {
+                console.log(
+                  `📡 Retrieving details for suggestion ${index + 1}: ${
+                    suggestion.name
+                  }`
+                );
+                const retrieveResponse = await fetch(
+                  `https://api.mapbox.com/search/searchbox/v1/retrieve/${suggestion.mapbox_id}?` +
+                    new URLSearchParams({
+                      access_token: MAPBOX_TOKEN,
+                      session_token: Date.now().toString(),
+                    }),
+                  { signal: abortControllerRef.current!.signal }
+                );
 
-          setSuggestions(sortedSuggestions);
+                if (retrieveResponse.ok) {
+                  const retrieveData = await retrieveResponse.json();
+                  const feature = retrieveData.features[0];
+                  console.log(
+                    `✅ Retrieved data for ${suggestion.name}:`,
+                    feature
+                  );
+
+                  if (
+                    feature &&
+                    feature.geometry &&
+                    feature.geometry.coordinates
+                  ) {
+                    return {
+                      id: suggestion.mapbox_id,
+                      place_name:
+                        suggestion.full_address ||
+                        suggestion.name ||
+                        suggestion.place_formatted,
+                      text: suggestion.name,
+                      center: [
+                        feature.geometry.coordinates[0],
+                        feature.geometry.coordinates[1],
+                      ] as [number, number],
+                      place_type: [suggestion.feature_type || "place"],
+                      properties: {
+                        category:
+                          suggestion.poi_category_ids?.join(", ") ||
+                          suggestion.feature_type,
+                        address: suggestion.full_address,
+                      },
+                      matching_text: suggestion.name,
+                      matching_place_name:
+                        suggestion.full_address || suggestion.place_formatted,
+                    };
+                  }
+                } else {
+                  console.warn(
+                    `⚠️ Retrieve API failed for ${suggestion.name}: ${retrieveResponse.status}`
+                  );
+                }
+              } catch (error: unknown) {
+                console.warn(
+                  `❌ Error retrieving suggestion ${suggestion.name}:`,
+                  error instanceof Error ? error.message : String(error)
+                );
+                return null;
+              }
+              return null;
+            }
+          );
+
+          const retrievedSuggestions = await Promise.all(retrievePromises);
+          const validSuggestions = retrievedSuggestions.filter(
+            Boolean
+          ) as LocationSuggestion[];
+
+          console.log(
+            `✅ Successfully retrieved ${validSuggestions.length} valid suggestions:`,
+            validSuggestions
+          );
+          setSuggestions(validSuggestions);
+        } else {
+          console.log(
+            "⚠️ No suggestions found, falling back to legacy geocoding"
+          );
+          await fallbackGeocoding(query);
         }
-      } catch (error) {
-        console.error("Search error:", error);
-        setSuggestions([]);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          console.error("❌ Search error:", error.message);
+          console.log("🔄 Falling back to legacy geocoding API");
+          await fallbackGeocoding(query);
+        } else {
+          console.log("⏹️ Search aborted by user");
+        }
       } finally {
         setIsSearching(false);
+        console.log("🏁 Search completed");
       }
     },
     [currentLocation.longitude, currentLocation.latitude]
   );
+
+  const fallbackGeocoding = async (query: string) => {
+    try {
+      console.log("📡 Calling fallback Geocoding API...");
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?` +
+          new URLSearchParams({
+            access_token: MAPBOX_TOKEN,
+            country: "ID",
+            limit: "8",
+            language: "id,en",
+            proximity: `${currentLocation.longitude},${currentLocation.latitude}`,
+            types: "poi,address,place,locality,region",
+          })
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Fallback geocoding results:", data.features);
+
+        const formattedSuggestions: LocationSuggestion[] = data.features.map(
+          (feature: any) => ({
+            id: feature.id,
+            place_name: feature.place_name,
+            text: feature.text,
+            center: feature.center,
+            place_type: feature.place_type,
+            properties: {
+              category: feature.properties?.category,
+              address: feature.place_name,
+            },
+          })
+        );
+
+        console.log(
+          `✅ Formatted ${formattedSuggestions.length} fallback suggestions`
+        );
+        setSuggestions(formattedSuggestions);
+      } else {
+        console.error(`❌ Fallback geocoding API failed: ${response.status}`);
+        setSuggestions([]);
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("❌ Fallback geocoding error:", error.message);
+      } else {
+        console.error("❌ Fallback geocoding error:", error);
+      }
+      setSuggestions([]);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -221,11 +353,11 @@ export default function CheckclockMap({
 
   const reverseGeocode = useCallback(async (lng: number, lat: number) => {
     try {
+      console.log(`📡 Reverse geocoding coordinates: [${lng}, ${lat}]`);
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?` +
           new URLSearchParams({
-            access_token:
-              "pk.eyJ1IjoiYW1hbmRhZmFkaWxhMTEiLCJhIjoiY21iam1vbmJ4MGl0aTJrcTY5c3dwNm54eiJ9.bNz01unwDtQUnX7vBfjp0g",
+            access_token: MAPBOX_TOKEN,
             language: "id,en",
             types: "place,locality,neighborhood,address,poi",
           })
@@ -233,55 +365,90 @@ export default function CheckclockMap({
 
       if (response.ok) {
         const data = await response.json();
+        console.log("✅ Reverse geocoding response:", data);
+
         if (data.features && data.features[0]) {
           const feature = data.features[0];
-          return {
+          const result = {
             location: feature.text || feature.place_name.split(",")[0],
             address: feature.place_name,
           };
+          console.log("✅ Reverse geocoding result:", result);
+          return result;
+        } else {
+          console.warn("⚠️ No features found in reverse geocoding response");
         }
+      } else {
+        console.error(`❌ Reverse geocoding API failed: ${response.status}`);
       }
-    } catch (error) {
-      console.error("Reverse geocoding error:", error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("❌ Reverse geocoding error:", error.message);
+      } else {
+        console.error("❌ Reverse geocoding error:", error);
+      }
     }
+    console.log("❌ Reverse geocoding returned null");
     return null;
   }, []);
 
-  const handleSuggestionClick = async (suggestion: LocationSuggestion) => {
-    const newLng = suggestion.center[0];
-    const newLat = suggestion.center[1];
+  const handleSuggestionClick = useCallback(
+    async (suggestion: LocationSuggestion) => {
+      console.log("🎯 User clicked suggestion:", suggestion);
 
-    setViewState({
-      longitude: newLng,
-      latitude: newLat,
-      zoom: 16,
-    });
+      const newLng = suggestion.center[0];
+      const newLat = suggestion.center[1];
 
-    const newLocation = {
-      ...currentLocation,
-      longitude: newLng,
-      latitude: newLat,
-      name: suggestion.text || suggestion.place_name.split(",")[0],
-    };
-    setCurrentLocation(newLocation);
+      console.log(`📍 Moving map to coordinates: [${newLng}, ${newLat}]`);
 
-    setSearchQuery(suggestion.place_name);
-    setShowSuggestions(false);
-
-    if (onLocationChange) {
-      onLocationChange({
-        location: newLocation.name,
-        address: suggestion.place_name,
-        latitude: newLat,
+      // Consolidated state update
+      setCurrentLocation((prev) => ({
+        ...prev,
         longitude: newLng,
+        latitude: newLat,
+        name: suggestion.text || suggestion.place_name.split(",")[0],
+      }));
+      setViewState({
+        longitude: newLng,
+        latitude: newLat,
+        zoom: 16,
       });
-    }
-  };
+      setSearchQuery(suggestion.place_name);
+      setShowSuggestions(false);
+
+      // Force map update
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [newLng, newLat],
+          zoom: 16,
+          duration: 1000,
+        });
+      }
+
+      console.log("📡 Calling onLocationChange callback...");
+      if (onLocationChange) {
+        onLocationChange({
+          location: suggestion.text || suggestion.place_name.split(",")[0],
+          address: suggestion.place_name,
+          latitude: newLat,
+          longitude: newLng,
+        });
+        console.log("✅ onLocationChange callback completed");
+      } else {
+        console.log("⚠️ No onLocationChange callback provided");
+      }
+
+      console.log("🏁 Suggestion click handling completed");
+    },
+    [onLocationChange]
+  );
 
   const handleMarkerDrag = useCallback(
     async (event: any) => {
       const newLng = event.lngLat.lng;
       const newLat = event.lngLat.lat;
+
+      console.log(`🖱️ Marker dragged to: [${newLng}, ${newLat}]`);
 
       const newLocation = {
         ...currentLocation,
@@ -290,12 +457,16 @@ export default function CheckclockMap({
       };
       setCurrentLocation(newLocation);
 
+      console.log("📡 Starting reverse geocoding...");
       const geocodeResult = await reverseGeocode(newLng, newLat);
+
       if (geocodeResult) {
+        console.log("✅ Reverse geocoding successful:", geocodeResult);
         newLocation.name = geocodeResult.location;
         setCurrentLocation(newLocation);
         setSearchQuery(geocodeResult.address);
 
+        console.log("📡 Calling onLocationChange from marker drag...");
         if (onLocationChange) {
           onLocationChange({
             location: geocodeResult.location,
@@ -303,84 +474,166 @@ export default function CheckclockMap({
             latitude: newLat,
             longitude: newLng,
           });
+          console.log(
+            "✅ onLocationChange callback completed from marker drag"
+          );
         }
+      } else {
+        console.warn("⚠️ Reverse geocoding returned no results");
       }
+
+      // Force map update
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [newLng, newLat],
+          zoom: 16,
+          duration: 1000,
+        });
+      }
+
+      console.log("🏁 Marker drag handling completed");
     },
     [currentLocation, onLocationChange, reverseGeocode]
   );
 
   const getCurrentLocation = () => {
+    console.log("📍 Getting current location from GPS...");
+
     if ("geolocation" in navigator) {
+      // Try single position first
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const newLng = position.coords.longitude;
-          const newLat = position.coords.latitude;
-          const accuracy = position.coords.accuracy;
-
-          if (accuracy > 100) {
-            alert(
-              "Location accuracy is low. Please ensure GPS is enabled or try again."
-            );
-          }
-
-          setViewState({
-            longitude: newLng,
-            latitude: newLat,
-            zoom: 16,
-          });
-
-          const geocodeResult = await reverseGeocode(newLng, newLat);
-          const newLocation = {
-            ...currentLocation,
-            longitude: newLng,
-            latitude: newLat,
-            name: geocodeResult?.location || "Current Location",
-          };
-          setCurrentLocation(newLocation);
-
-          if (geocodeResult) {
-            setSearchQuery(geocodeResult.address);
-            if (onLocationChange) {
-              onLocationChange({
-                location: geocodeResult.location,
-                address: geocodeResult.address,
-                latitude: newLat,
-                longitude: newLng,
-              });
-            }
-          }
+          handlePositionUpdate(position);
         },
-        (error) => {
-          console.error("Error getting location:", error);
-          let errorMessage = "Could not get your current location. ";
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage +=
-                "Please enable location permissions in your browser.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage +=
-                "Location data is unavailable. Please check your GPS or network.";
-              break;
-            case error.TIMEOUT:
-              errorMessage += "Location request timed out. Please try again.";
-              break;
-            default:
-              errorMessage += "An unknown error occurred.";
-          }
-          alert(errorMessage);
+        (error: GeolocationPositionError) => {
+          handleGeolocationError(error);
+          startWatchingPosition(); // Fallback to watchPosition
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 20000, // Increased to 20s
           maximumAge: 0,
         }
       );
     } else {
+      console.error("❌ Geolocation not supported");
       alert(
         "Geolocation is not supported by this browser. Please enter a location manually."
       );
     }
+  };
+
+  const startWatchingPosition = () => {
+    console.log("🔄 Starting watchPosition for better accuracy...");
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        handlePositionUpdate(position);
+        // Clear watch after first accurate result
+        if (position.coords.accuracy <= 30) {
+          navigator.geolocation.clearWatch(watchId);
+          console.log("✅ Stopped watchPosition: accurate location obtained");
+        }
+      },
+      (error: GeolocationPositionError) => {
+        handleGeolocationError(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handlePositionUpdate = async (position: GeolocationPosition) => {
+    const newLng = position.coords.longitude;
+    const newLat = position.coords.latitude;
+    const accuracy = position.coords.accuracy;
+    const timestamp = new Date(position.timestamp).toISOString();
+    const altitude = position.coords.altitude;
+    const heading = position.coords.heading;
+
+    console.log(
+      `✅ GPS location obtained: [${newLng}, ${newLat}], accuracy: ${accuracy}m, timestamp: ${timestamp}, altitude: ${altitude}m, heading: ${heading}°`
+    );
+
+    if (accuracy > 30) {
+      console.warn(`⚠️ Low GPS accuracy: ${accuracy}m`);
+      alert(
+        "Location accuracy is low (<30m required). Please ensure GPS is enabled, move to an open area, or try on a mobile device."
+      );
+      return; // Skip updating if accuracy is too low
+    }
+
+    console.log("📍 Moving map to GPS location");
+    setViewState({
+      longitude: newLng,
+      latitude: newLat,
+      zoom: 16,
+    });
+
+    // Force map update
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [newLng, newLat],
+        zoom: 16,
+        duration: 1000,
+      });
+    }
+
+    console.log("📡 Starting reverse geocoding for GPS location...");
+    const geocodeResult = await reverseGeocode(newLng, newLat);
+    const newLocation = {
+      ...currentLocation,
+      longitude: newLng,
+      latitude: newLat,
+      name: geocodeResult?.location || "Current Location",
+    };
+
+    console.log("📍 Setting GPS location:", newLocation);
+    setCurrentLocation(newLocation);
+
+    if (geocodeResult) {
+      setSearchQuery(geocodeResult.address);
+      console.log("📡 Calling onLocationChange from GPS...");
+      if (onLocationChange) {
+        onLocationChange({
+          location: geocodeResult.location,
+          address: geocodeResult.address,
+          latitude: newLat,
+          longitude: newLng,
+        });
+        console.log("✅ onLocationChange callback completed from GPS");
+      }
+    }
+
+    console.log("🏁 GPS location handling completed");
+  };
+
+  const handleGeolocationError = (error: GeolocationPositionError) => {
+    console.error("❌ GPS error:", error.message);
+    let errorMessage = "Could not get your current location. ";
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        errorMessage +=
+          "Please enable location permissions in your browser and try again.";
+        console.error("❌ GPS permission denied");
+        break;
+      case error.POSITION_UNAVAILABLE:
+        errorMessage +=
+          "Location data is unavailable. Please check your GPS, network, or try on a mobile device.";
+        console.error("❌ GPS position unavailable");
+        break;
+      case error.TIMEOUT:
+        errorMessage +=
+          "Location request timed out. Please move to an open area or try again.";
+        console.error("❌ GPS timeout");
+        break;
+      default:
+        errorMessage += "An unknown error occurred.";
+        console.error("❌ Unknown GPS error");
+    }
+    alert(errorMessage);
   };
 
   useEffect(() => {
@@ -389,6 +642,17 @@ export default function CheckclockMap({
       radius: initialRadius,
     }));
   }, [initialRadius]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const circleLayerStyle = {
     id: "radius-circle",
@@ -409,7 +673,6 @@ export default function CheckclockMap({
     },
   };
 
-  // Use Turf.js for circle creation
   const circleGeoJSON = createCircleWithTurf(
     [currentLocation.longitude, currentLocation.latitude],
     currentLocation.radius
@@ -429,7 +692,12 @@ export default function CheckclockMap({
                 placeholder="Search for a building, address, or location in Indonesia..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onFocus={() => setShowSuggestions(true)}
+                onFocus={() => {
+                  setShowSuggestions(true);
+                  if (searchQuery && suggestions.length === 0) {
+                    searchLocations(searchQuery);
+                  }
+                }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 shadow-lg"
               />
@@ -441,15 +709,20 @@ export default function CheckclockMap({
             </div>
             <button
               onClick={getCurrentLocation}
-              className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-lg transition-colors"
+              className="px-3 py-2 bg-primary-900 text-white rounded-md hover:bg-primary-700 shadow-lg transition-colors"
               title="Get current location"
             >
               <IconCurrentLocation className="h-5 w-5" />
             </button>
           </div>
 
-          {showSuggestions && suggestions.length > 0 && (
+          {showSuggestions && (suggestions.length > 0 || isSearching) && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-20">
+              {isSearching && suggestions.length === 0 && (
+                <div className="px-3 py-2 text-gray-500 text-sm">
+                  Searching for locations...
+                </div>
+              )}
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
@@ -465,16 +738,22 @@ export default function CheckclockMap({
                       <div className="text-xs text-gray-500 truncate">
                         {suggestion.place_name}
                       </div>
-                      {/* Debug info - remove in production */}
-                      <div className="text-xs text-blue-500 truncate">
-                        {suggestion.place_type.join(", ")}{" "}
-                        {suggestion.properties?.category &&
-                          `| ${suggestion.properties.category}`}
-                      </div>
+                      {suggestion.properties?.category && (
+                        <div className="text-xs text-blue-500 truncate">
+                          {suggestion.properties.category}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
               ))}
+              {!isSearching &&
+                suggestions.length === 0 &&
+                searchQuery.trim() && (
+                  <div className="px-3 py-2 text-gray-500 text-sm">
+                    No locations found. Try a different search term.
+                  </div>
+                )}
             </div>
           )}
         </div>
@@ -482,8 +761,9 @@ export default function CheckclockMap({
 
       <Map
         {...viewState}
+        ref={mapRef}
         onMove={(evt) => setViewState(evt.viewState)}
-        mapboxAccessToken="pk.eyJ1IjoiYW1hbmRhZmFkaWxhMTEiLCJhIjoiY21iam1vbmJ4MGl0aTJrcTY5c3dwNm54eiJ9.bNz01unwDtQUnX7vBfjp0g"
+        mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
       >
@@ -522,22 +802,22 @@ export default function CheckclockMap({
         </Marker>
       </Map>
 
-      <div className="absolute bottom-4 left-4 bg-white p-3 rounded-md shadow-lg border z-10">
-        <div className="text-sm font-medium text-gray-800 mb-2">Legend</div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-4 bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed rounded mr-2"></div>
-          <span className="text-xs text-gray-600">
-            Clock-in allowed area (Turf.js)
-          </span>
-        </div>
-        <div className="flex items-center mb-1">
-          <IconMapPinFilled className="h-4 w-4 text-red-500 mr-2" />
-          <span className="text-xs text-gray-600">
-            Office location (draggable)
-          </span>
-        </div>
-        <div className="text-xs text-gray-500 mt-2">
-          💡 Drag the pin or search to set location
+      <div className="relative">
+        <div className="absolute bottom-4 left-4 bg-white p-3 rounded-md shadow-lg border z-10">
+          <div className="text-sm font-medium text-gray-800 mb-2">Tooltip</div>
+          <div className="flex items-center mb-1">
+            <div className="w-4 h-4 bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed rounded mr-2"></div>
+            <span className="text-xs text-gray-600">Clock-in allowed area</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <IconMapPinFilled className="h-4 w-4 text-red-500 mr-2" />
+            <span className="text-xs text-gray-600">
+              Office location (draggable)
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            💡 Drag the pin or search to set location
+          </div>
         </div>
       </div>
     </div>

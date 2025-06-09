@@ -25,7 +25,7 @@ export default function CheckclockLayout({
             <AppBreadcrumb />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 overflow-x-hidden">
+        <div className="flex flex-1 relative flex-col gap-4 overflow-x-hidden">
           {children}
         </div>
       </SidebarInset>
