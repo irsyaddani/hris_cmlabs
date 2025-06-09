@@ -61,5 +61,5 @@ Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
 
 Route::prefix('checkclock')->group(function () {
     Route::get('/', [CheckClockController::class, 'index']);
-    Route::PUT('/approval/{id}', [CheckClockController::class, 'updateApproval']);
+    Route::put('/approval/{id}', [CheckClockController::class, 'updateApproval']);
 });

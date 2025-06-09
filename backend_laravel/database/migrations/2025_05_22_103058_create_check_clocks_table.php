@@ -21,7 +21,7 @@ return new class extends Migration
             $table->dateTime('clock_out')->nullable();
             $table->text('reason')->nullable();
             $table->string('file')->nullable(); // jika file berupa path, gunakan string
-            $table->enum('status_approval', ['approved', 'accepted', 'pending'])->nullable();
+            $table->enum('status_approval', ['approved', 'rejected', 'pending'])->nullable();
             $table->decimal('latitude', 18, 15)->nullable();
             $table->decimal('longitude', 18, 15)->nullable();
             $table->timestamps();

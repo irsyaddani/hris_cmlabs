@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable } from "../../components/data-table-components/data-table";
-import { columns as checkclockColumnsFunction } from "../../components/data-table-components/columns-checkclock";
+import { useCheckclockColumns as checkclockColumnsFunction } from "../../components/data-table-components/columns-checkclock";
 import { columns as clockinColumns } from "../../components/data-table-components/columns-clockin";
 import { columns as clockHistoryColumns } from "../../components/data-table-components/columns-clock-history";
 import { useUser } from "@/lib/user-context";
