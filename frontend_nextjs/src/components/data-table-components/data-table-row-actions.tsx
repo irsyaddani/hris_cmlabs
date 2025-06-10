@@ -16,6 +16,7 @@ import {
 
 import { IconDots } from "@tabler/icons-react";
 import { DetailsSheet } from "@/components/details-sheet";
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -26,6 +27,8 @@ export function DataTableRowActions<TData>({
   row,
   variant,
 }: DataTableRowActionsProps<TData>) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
   const [openSheet, setOpenSheet] = useState(false);
 
@@ -34,34 +37,34 @@ export function DataTableRowActions<TData>({
 
   const detailsHref =
     variant === "employment"
-      ? `/employment/employee-details?id=${id}`
+      ? `/employment/employee-details/${id}`
       : `/checkclock?id=${id}`;
 
   async function handleDelete() {
-    if (!confirm("Yakin ingin menghapus data ini?")) return;
-
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`http://localhost:8000/api/employees/${id}`, {
+      const endpoint =
+        variant === "employment"
+          ? `http://localhost:8000/api/employees/${id}`
+          : `http://localhost:8000/api/checkclock/${id}`;
+
+      const res = await fetch(endpoint, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        alert("Gagal menghapus: " + errorText);
-        return;
-      }
-
-      alert("Data berhasil dihapus");
-      router.refresh();
+      setConfirmOpen(false);
+      variant === "employment"
+        ? router.push("/employment?success=delete-success")
+        : router.push("/checkclock?success=delete-success");
     } catch (error) {
-      alert("Terjadi kesalahan saat menghapus data");
-      console.error("Delete error:", error);
+      variant === "employment"
+        ? console.error("Failed to delete employee data:", error)
+        : console.error("Failed to delete attendance data:", error);
+      setErrorMessage("An error occurred while deleting data.");
     }
   }
 
@@ -159,12 +162,25 @@ export function DataTableRowActions<TData>({
               Details
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            onClick={handleDelete}
-            className="text-danger-main hover:text-danger-hover cursor-pointer"
-          >
-            Delete
-          </DropdownMenuItem>
+
+          <ConfirmDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            title="Are you sure you want to delete this employee?"
+            description="This action cannot be undone and will remove all related data permanently."
+            confirmText="Delete"
+            cancelText="Cancel"
+            confirmClassName="bg-danger-main text-white hover:bg-danger-hover"
+            cancelClassName="hover:bg-neutral-200"
+            onConfirm={handleDelete}
+            trigger={
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <div className="w-full text-danger-main hover:text-danger-hover cursor-pointer">
+                  Delete
+                </div>
+              </DropdownMenuItem>
+            }
+          />
         </DropdownMenuContent>
       </DropdownMenu>
     </>

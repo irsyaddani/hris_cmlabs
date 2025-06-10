@@ -62,4 +62,5 @@ Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
 Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
     Route::get('/', 'index'); // Ambil semua data
     Route::put('/approval/{id}', 'updateApproval'); // Update status approval
+    Route::delete('/{id}', 'destroy');
 });
