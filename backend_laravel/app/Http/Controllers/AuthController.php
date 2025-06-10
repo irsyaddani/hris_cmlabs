@@ -85,25 +85,27 @@ class AuthController extends Controller
         $password = $credentials['password'];
 
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $user = User::where('email', $identifier)->first();
-
+            $user = User::with('employee')->where('email', $identifier)->first();
             if ($user && Hash::check($password, $user->password)) {
                 $token = $user->createToken('auth_token')->plainTextToken;
+                $level = $user->employee->level;
 
                 return response()->json([
                     'message' => 'Login via email sukses',
                     'token'   => $token,
                     'user'    => $user,
+                    'level'   => $user->employee->level
                 ]);
             }
         } else {
-            $employee = Employee::where('employee_code', $identifier)->first();
-
+            $employee = Employee::with('user')->where('employee_code', $identifier)->first();
+            
             if ($employee && $employee->user) {
                 $user = $employee->user;
 
                 if (Hash::check($password, $user->password)) {
                     $token = $user->createToken('auth_token')->plainTextToken;
+                    $level = $employee->level;
 
                     $isDefaultPassword = Hash::check($employee->employee_code, $user->password);
 
@@ -111,6 +113,7 @@ class AuthController extends Controller
                         'message'              => 'Login via employee id sukses',
                         'token'                => $token,
                         'user'                 => $user,
+                        'level'                => $employee->level,
                         'need_reset_password'  => $isDefaultPassword,
                     ]);
                 }
