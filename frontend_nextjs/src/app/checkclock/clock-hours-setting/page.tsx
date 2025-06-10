@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import CheckclockMap from "@/components/map/checkclock-map";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import axios from "axios";
 
 interface LocationData {
   location: string;
@@ -21,28 +23,114 @@ interface WorkingHours {
   endBreak: string;
 }
 
+const defaultLocation: LocationData = {
+  location: "CMLABS HQ",
+  detailAddress: "Jl. Seruni No. 9, Lowokwaru, Kota Malang, Jawa Timur 65141",
+  latitude: "-7.9546738",
+  longitude: "112.6322144",
+  radius: 250,
+};
+
 export default function ClockHoursSettingPage() {
-  // State for location information
-  const [locationData, setLocationData] = useState<LocationData>({
-    location: "CMLABS HQ",
-    detailAddress: "Jl. Seruni No. 9, Lowokwaru, Kota Malang, Jawa Timur 65141",
-    latitude: "-7.9546738",
-    longitude: "112.6322144",
-    radius: 250, // Default 250m
-  });
-
-  // State for radius input
+  const [locationData, setLocationData] = useState<LocationData>(defaultLocation);
   const [radiusInput, setRadiusInput] = useState<string>("250");
-
-  // State for working hours
   const [workingHours, setWorkingHours] = useState<WorkingHours>({
     clockIn: "",
     clockOut: "",
     startBreak: "",
     endBreak: "",
   });
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Handler for updating location data (excluding radius)
+  // Fetch company_id from /api/user
+  useEffect(() => {
+    const fetchCompanyId = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please log in to access this page.");
+        setIsLoading(false);
+        router.push("/login");
+        return;
+      }
+
+      try {
+        console.log("📡 Fetching user profile from /api/user...");
+        const response = await axios.get("http://localhost:8000/api/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("✅ API response:", response.data);
+
+        // Handle possible nested data structure
+        const userData = response.data.data || response.data;
+        if (!userData.company_id) {
+          throw new Error("Company ID not found in user profile.");
+        }
+        setCompanyId(userData.company_id);
+      } catch (err: any) {
+        console.error("Error fetching company ID:", err.message, err.response?.data);
+        setError("Failed to load user profile. Please log in again.");
+        router.push("/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanyId();
+  }, [router]);
+
+  // Fetch clock settings once companyId is available
+  useEffect(() => {
+    if (!companyId) return;
+    console.log(companyId);
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      try {
+        console.log(`📡 Fetching clock settings for company ID: ${companyId}`);
+        const response = await axios.get(
+          `http://localhost:8000/api/clock-settings/${companyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        console.log("✅ Clock settings response:", response.data);
+        const data = response.data.data;
+
+        const newLocationData = {
+          location: data?.locationName ?? defaultLocation.location,
+          detailAddress: data?.detailAddress ?? defaultLocation.detailAddress,
+          latitude: data?.latitude?.toString() ?? defaultLocation.latitude,
+          longitude: data?.longitude?.toString() ?? defaultLocation.longitude,
+          radius: data?.radius ?? defaultLocation.radius,
+        };
+
+        setLocationData(newLocationData);
+        setRadiusInput(String(data?.radius ?? defaultLocation.radius));
+        setWorkingHours({
+          clockIn: data?.clockIn?.slice(0, 5) ?? "",
+          clockOut: data?.clockOut?.slice(0, 5) ?? "",
+          startBreak: data?.breakStart?.slice(0, 5) ?? "",
+          endBreak: data?.breakEnd?.slice(0, 5) ?? "",
+        });
+      } catch (error: any) {
+        console.error("Error fetching settings:", error.message, error.response?.data);
+        setError("Failed to load clock settings.");
+        setLocationData(defaultLocation);
+        setRadiusInput("250");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, [companyId]);
+
   const handleLocationChange = (field: keyof LocationData, value: string) => {
     if (field !== "radius") {
       setLocationData((prev) => ({
@@ -52,12 +140,10 @@ export default function ClockHoursSettingPage() {
     }
   };
 
-  // Handler for radius input change
   const handleRadiusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRadiusInput(e.target.value);
   };
 
-  // Handler for updating working hours
   const handleWorkingHoursChange = (
     field: keyof WorkingHours,
     value: string
@@ -68,7 +154,6 @@ export default function ClockHoursSettingPage() {
     }));
   };
 
-  // Handler for receiving data from map component
   const handleMapDataChange = (mapData: {
     location?: string;
     address?: string;
@@ -84,35 +169,58 @@ export default function ClockHoursSettingPage() {
     }));
   };
 
-  // Handler for setting radius from button
   const handleSetRadius = () => {
     const newRadius = parseInt(radiusInput, 10);
     if (isNaN(newRadius) || newRadius < 50 || newRadius > 1000) {
       alert("Please enter a valid radius between 50 and 1000 meters.");
-      setRadiusInput(locationData.radius.toString()); // Reset to current radius
+      setRadiusInput(locationData.radius.toString());
       return;
     }
     setLocationData((prev) => ({
       ...prev,
       radius: newRadius,
     }));
+    setRadiusInput(String(newRadius));
     console.log(`✅ Radius set to ${newRadius}m`);
   };
 
-  const handleSubmit = () => {
-    console.log("Location Data:", locationData);
-    console.log("Working Hours:", workingHours);
+  const handleSubmit = async () => {
+    if (!companyId) {
+      alert("Company ID not available. Please log in again.");
+      return;
+    }
+
+    try {
+      console.log("📡 Saving clock settings...");
+      await axios.post(
+        `http://localhost:8000/api/clock-settings`,
+        {
+          company_id: companyId,
+          locationName: locationData.location,
+          detailAddress: locationData.detailAddress,
+          latitude: parseFloat(locationData.latitude),
+          longitude: parseFloat(locationData.longitude),
+          radius: locationData.radius,
+          clockIn: workingHours.clockIn,
+          clockOut: workingHours.clockOut,
+          breakStart: workingHours.startBreak,
+          breakEnd: workingHours.endBreak,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      alert("Settings saved successfully!");
+    } catch (error: any) {
+      console.error("Error saving settings:", error.message, error.response?.data);
+      alert("Failed to save settings. Please try again.");
+    }
   };
 
   const handleCancel = () => {
-    setLocationData({
-      location: "CMLABS HQ",
-      detailAddress:
-        "Jl. Seruni No. 9, Lowokwaru, Kota Malang, Jawa Timur 65141",
-      latitude: "-7.9546738",
-      longitude: "112.6322144",
-      radius: 250, // Reset to 250m
-    });
+    setLocationData(defaultLocation);
     setRadiusInput("250");
     setWorkingHours({
       clockIn: "",
@@ -122,13 +230,29 @@ export default function ClockHoursSettingPage() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[100vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[100vh] flex items-center justify-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
       <h1 className="font-bold text-2xl">Clock Hours Setting</h1>
 
       <div className="space-y-10">
         <div className="space-y-5">
-          {/* Location Information Section */}
           <div className="space-y-4">
             <h3 className="text-md text-muted-foreground mb-6">
               Location Information
@@ -137,9 +261,9 @@ export default function ClockHoursSettingPage() {
           </div>
 
           <div className="grid gap-2 w-full">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="locationName">Location Name</Label>
             <Input
-              id="location"
+              id="locationName"
               type="text"
               placeholder="CMLABS HQ"
               value={locationData.location}
@@ -147,7 +271,6 @@ export default function ClockHoursSettingPage() {
             />
           </div>
 
-          {/* Map Component */}
           <div className="border border-neutral-200 rounded-lg w-full">
             <CheckclockMap
               onLocationChange={handleMapDataChange}
@@ -211,7 +334,7 @@ export default function ClockHoursSettingPage() {
                 type="button"
                 size="sm"
                 variant="secondary"
-                className=" hover:bg-neutral-200 cursor-pointer"
+                className="hover:bg-neutral-200 cursor-pointer"
                 onClick={handleSetRadius}
               >
                 Set
@@ -225,7 +348,6 @@ export default function ClockHoursSettingPage() {
         </div>
 
         <div className="space-y-5">
-          {/* Working Hours Section */}
           <div className="space-y-4">
             <h3 className="text-md text-muted-foreground mb-6">
               Working Hours
@@ -235,7 +357,7 @@ export default function ClockHoursSettingPage() {
 
           <div className="w-full grid grid-cols-2 gap-3">
             <div className="grid gap-2 w-full">
-              <Label htmlFor="clockIn">Clock in</Label>
+              <Label htmlFor="clockIn">Clock In</Label>
               <Input
                 type="time"
                 id="clockIn"
@@ -248,7 +370,7 @@ export default function ClockHoursSettingPage() {
               />
             </div>
             <div className="grid gap-2 w-full">
-              <Label htmlFor="clockOut">Clock out</Label>
+              <Label htmlFor="clockOut">Clock Out</Label>
               <Input
                 type="time"
                 id="clockOut"
@@ -308,6 +430,7 @@ export default function ClockHoursSettingPage() {
             size="lg"
             className="gap-4 bg-primary-900 hover:bg-primary-700 cursor-pointer"
             onClick={handleSubmit}
+            disabled={!companyId}
           >
             Save
           </Button>
