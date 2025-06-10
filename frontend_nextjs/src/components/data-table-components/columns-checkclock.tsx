@@ -8,10 +8,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { ConfirmDialog } from "../dialogs/confirm-dialog";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
-export function columns(
-  updateApproval: (id: string, status: string) => void
-): ColumnDef<Checkclock>[] {
+const updateApproval = async (id: string, status: string, router: ReturnType<typeof useRouter>) => {
+  try {
+    const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
+      status_approval: status,
+    });
+    console.log(`Approval updated: ${status}`, response.data);
+    window.location.reload();
+  } catch (err) {
+    console.error("Error updating approval:", err);
+  }
+};
+
+export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkclock>[] {
   return [
     {
       id: "select",
@@ -171,7 +183,6 @@ export function columns(
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         const approval = row.getValue("approval") as string;
-        // Ganti row.getValue("id") dengan row.original.id
         const id = row.original.id as string;
 
         if (status === "permit" || status === "annual leave") {
@@ -184,12 +195,12 @@ export function columns(
                       <IconCheck className="h-4 w-4" />
                     </Button>
                   }
-                  title="Are you sure want to proceed?"
-                  description="This action cannot be undone. This will permanently update to employee data."
+                  title="Approve Request"
+                  description="Are you sure you want to approve this request? This action cannot be undone."
                   confirmText="Approve"
                   cancelText="Cancel"
                   confirmClassName="bg-[var(--color-primary-900)] text-white hover:bg-[var(--color-primary-800)]"
-                  onConfirm={() => updateApproval(id, "approved")}
+                  onConfirm={() => updateApproval(id, "approved", router)}
                 />
                 <ConfirmDialog
                   trigger={
@@ -197,12 +208,12 @@ export function columns(
                       <IconX className="h-4 w-4" />
                     </Button>
                   }
-                  title="Are you sure want to proceed?"
-                  description="This action cannot be undone. This will permanently update to employee data."
+                  title="Reject Request"
+                  description="Are you sure you want to reject this request? This action cannot be undone."
                   confirmText="Reject"
                   cancelText="Cancel"
                   confirmClassName="bg-[var(--color-danger-main)] text-white hover:bg-[var(--color-danger-hover)]"
-                  onConfirm={() => updateApproval(id, "rejected")}
+                  onConfirm={() => updateApproval(id, "rejected", router)}
                 />
               </div>
             );
@@ -210,25 +221,27 @@ export function columns(
 
           return (
             <div
-              className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-sm font-medium capitalize ${
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium capitalize ${
                 approval === "approved"
-                  ? "bg-green-100 text-black"
+                  ? "bg-green-100 text-green-800"
                   : approval === "rejected"
-                  ? "bg-[var(--color-neutral-100)] text-black"
-                  : ""
+                  ? "bg-red-100 text-red-800"
+                  : "bg-gray-100 text-gray-800"
               }`}
             >
               <div
                 className={`flex items-center justify-center w-4 h-4 rounded-full ${
                   approval === "approved"
-                    ? "bg-green-500 text-white"
-                    : "bg-[var(--color-neutral-500)] text-white"
+                    ? "bg-green-500"
+                    : approval === "rejected"
+                    ? "bg-red-500"
+                    : "bg-gray-500"
                 }`}
               >
                 {approval === "approved" ? (
-                  <IconCheck className="w-3 h-3" />
+                  <IconCheck className="w-3 h-3 text-white" />
                 ) : (
-                  <IconX className="w-3 h-3" />
+                  <IconX className="w-3 h-3 text-white" />
                 )}
               </div>
               {approval}
@@ -245,14 +258,58 @@ export function columns(
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const absentType = row.original.status; // 'permit', 'annual leave', atau null
+        const clockInRaw = row.original.clockIn; // bisa null/undefined
+        const clockOutRaw = row.original.clockOut;
+
+        // Hardcoded work start & late threshold
+        const today = new Date(); // referensi tanggal hari ini
+        const workStartTime = new Date(today);
+        workStartTime.setHours(8, 0, 0, 0); // 08:00
+
+        const lateThreshold = new Date(today);
+        lateThreshold.setHours(8, 15, 0, 0); // 08:15
+
+        const clockOutTime = clockOutRaw ? new Date(clockOutRaw) : null;
+        const clockInTime = clockInRaw ? new Date(clockInRaw) : null;
+        const currentTime = new Date();
+        const clockInStatus = !!clockInRaw; // true jika ada jam clockIn
+
+        let status = "no-show";
+
+        if (absentType === "sick") {
+          status = "permit";
+        } else if (absentType === "annual leave") {
+          status = "annual leave";
+        } else if (
+          !clockInStatus &&
+          clockOutTime &&
+          currentTime >= clockOutTime
+        ) {
+          status = "no-show";
+        } else if (
+          absentType === "wfo" || absentType === "wfh" &&
+          clockInTime &&
+          clockInTime <= lateThreshold
+        ) {
+          status = "on time";
+        } else if (
+          absentType === "wfo" || absentType === "wfh" &&
+          clockInTime &&
+          clockInTime > lateThreshold
+        ) {
+          status = "late";
+        }
+
         const statusStyles: Record<string, string> = {
           "on time": "text-green-600 bg-green-100",
           late: "text-yellow-600 bg-yellow-100",
           permit: "text-purple-600 bg-purple-100",
           "annual leave": "text-blue-600 bg-blue-100",
           "no-show": "text-red-600 bg-red-100",
+          unknown: "text-gray-600 bg-gray-100",
         };
+
         return (
           <span
             className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${statusStyles[status]}`}
@@ -262,9 +319,12 @@ export function columns(
         );
       },
     },
+
     {
       id: "actions",
-      cell: ({ row }) => <DataTableRowActions row={row} variant="checkclock" />,
+      cell: ({ row }) => (
+        <DataTableRowActions row={row} variant="checkclock" />
+      ),
     },
   ];
 }

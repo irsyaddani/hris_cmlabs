@@ -160,29 +160,57 @@ export default function CheckClockPage() {
 
   async function updateApproval(id: string, status: string) {
     try {
+      // Konversi id ke number jika diperlukan karena interface menggunakan number
+      const numericId = parseInt(id);
+
       const response = await fetch(
-        `http://localhost:8000/api/checkclock/approval/${id}`,
+        `http://127.0.0.1:8000/api/checkclock/approval/${numericId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ approvalStatus: status }),
+          body: JSON.stringify({ approval: status }),
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Server response error:", errorData);
-        throw new Error("Failed to update approval");
+        throw new Error(errorData.message || "Failed to update approval");
       }
 
-      const data = await response.json();
-      console.log("Approval updated successfully:", data);
+      const result = await response.json();
+      console.log("Approval updated successfully:", result);
 
-      // Refresh data after successful update
-      fetchCheckClocks();
+      // Update local state secara optimistic (update langsung tanpa fetch ulang)
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === numericId ? { ...item, approval: status } : item
+        )
+      );
+
+      // Show success message
+      setAlertType("success");
+      setAlertMessage(`Request ${status} successfully`);
+      setShowSuccessAlert(true);
+
+      // Auto hide alert after 3 seconds
+      setTimeout(() => {
+        setShowSuccessAlert(false);
+      }, 3000);
     } catch (error: any) {
-      console.error("Fetch failed:", error.message);
-      alert("Gagal mengupdate approval. Silakan coba lagi.");
+      console.error("Update approval failed:", error.message);
+
+      // Show error message
+      setAlertType("error");
+      setAlertMessage(
+        error.message || "Failed to update approval. Please try again."
+      );
+      setShowErrorAlert(true);
+
+      // Auto hide alert after 5 seconds
+      setTimeout(() => {
+        setShowErrorAlert(false);
+      }, 5000);
     }
   }
 

@@ -131,6 +131,7 @@ export function DataTableRowActions<TData>({
           <DropdownMenuSeparator />
           {variant === "checkclock" ? (
             <DetailsSheet
+              id={data.id}
               open={openSheet}
               onOpenChange={handleSheetChange}
               attendanceStatus={data.status}
