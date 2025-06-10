@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { IconDots } from "@tabler/icons-react";
-import { DetailsSheet } from "@/components/details-sheet";
+import { DetailsSheet } from "@/components/sheet/details-sheet";
 import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
 
 interface DataTableRowActionsProps<TData> {
