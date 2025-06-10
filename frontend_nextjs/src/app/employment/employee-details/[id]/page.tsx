@@ -293,7 +293,7 @@ export default function EmployeeDetailsPage() {
             size="lg"
             className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
             onClick={() =>
-              router.push(`/dashboard/employment/employee-edit/${id}`)
+              router.push(`/employment/employee-edit/${id}`)
             }
           >
             Edit data

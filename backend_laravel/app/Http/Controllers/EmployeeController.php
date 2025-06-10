@@ -43,7 +43,6 @@ class EmployeeController extends Controller
         return $code;
     }
 
-
     public function store(Request $request)
     {
         // Validasi input dari frontend
@@ -66,6 +65,7 @@ class EmployeeController extends Controller
             'bank' => 'required|string',
             'accountNumber' => 'required|string',
             'bankAccountName' => 'required|string',
+            'annualLeave' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -110,6 +110,7 @@ class EmployeeController extends Controller
                 'bank' => $validated['bank'],
                 'accountNumber' => $validated['accountNumber'],
                 'bankAccountName' => $validated['bankAccountName'],
+                'annualLeave' => $validated['annualLeave'],
                 'employee_code' => $employeeCode,
                 'level' => strtolower($validated['position']) === 'hr_manager' ? 'admin' : 'user',
                 'user_id' => $user->id,
@@ -195,6 +196,7 @@ class EmployeeController extends Controller
             'bank' => 'required|string',
             'accountNumber' => 'required|string',
             'bankAccountName' => 'required|string',
+            'annualLeave' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -241,6 +243,7 @@ class EmployeeController extends Controller
                 'bank' => $validated['bank'],
                 'accountNumber' => $validated['accountNumber'],
                 'bankAccountName' => $validated['bankAccountName'],
+                'annualLeave' => $validated['annualLeave'],
                 'level'=> strtolower($validated['position']) === 'hr_manager' ? 'admin' : 'user',
                 'employee_code' => $employee->employee_code,
             ]);

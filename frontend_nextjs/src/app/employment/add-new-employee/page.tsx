@@ -50,6 +50,7 @@ export default function AddNewEmployeePage() {
       bank: "",
       accountNumber: "",
       bankAccountName: "",
+      annualLeave: undefined, 
     },
   });
 
@@ -80,6 +81,10 @@ export default function AddNewEmployeePage() {
     setLoading(true);
     setError(null);
     setShowSuccessAlert(false); // Reset success alert on new submission
+    
+    if (!isEligibleForAnnualLeave(data.joinDate)) {
+        data.annualLeave = 0;
+      }
 
     try {
       const token = localStorage.getItem("token");
@@ -233,11 +238,8 @@ export default function AddNewEmployeePage() {
                 <TextFieldIcon
                   label="Annual Leave"
                   name="annualLeave"
-                  required
                   type="number"
-                  conditionalField="joinDate"
-                  conditionalCheck={isEligibleForAnnualLeave}
-                  disabledMessage="Available after 1 year of employment"
+                  required
                   icon={
                     <TooltipHelper
                       trigger={
@@ -245,8 +247,8 @@ export default function AddNewEmployeePage() {
                       }
                       content={
                         <p className="text-sm text-center">
-                          Only available for employees who have worked for at
-                          least 1 year
+                          Value ignored and set to 0 if employee hasn’t 
+                          reached 1 year.
                         </p>
                       }
                       side="right"
@@ -326,7 +328,7 @@ export default function AddNewEmployeePage() {
                 {loading ? "Loading..." : "Add employee"}
               </Button>
             </div>
-          </div>
+          </div> 
         </form>
       </FormProvider>
     </div>

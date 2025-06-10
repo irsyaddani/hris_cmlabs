@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('bank')->nullable();
             $table->string('accountNumber')->nullable();
             $table->string('bankAccountName')->nullable();
-            $table->integer('anualLeave')->nullable();
+            $table->integer('annualLeave')->nullable();
             $table->enum('level', ['user', 'admin'])->default('user');
             $table->timestamps();
         });
