@@ -12,10 +12,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { FilePreviewDialog } from "./dialogs/file-preview-dialog";
+import { FilePreviewDialog } from "../dialogs/file-preview-dialog";
 import { IconEye, IconFile } from "@tabler/icons-react";
-import DownloadButton from "./ui/download-button";
-import { ConfirmDialog } from "./dialogs/confirm-dialog";
+import DownloadButton from "../ui/download-button";
+import { ConfirmDialog } from "../dialogs/confirm-dialog";
 
 interface DetailsSheetProps {
   children?: ReactNode;
@@ -80,7 +80,8 @@ export function DetailsSheet({
   onApprovalStatusChange,
 }: DetailsSheetProps) {
   const [loading, setLoading] = useState(false);
-  const [localApprovalStatus, setLocalApprovalStatus] = useState(approvalStatus);
+  const [localApprovalStatus, setLocalApprovalStatus] =
+    useState(approvalStatus);
 
   useEffect(() => {
     setLocalApprovalStatus(approvalStatus);
@@ -120,7 +121,8 @@ export function DetailsSheet({
     }
   }
 
-  const isFinalized = localApprovalStatus === "approved" || localApprovalStatus === "rejected";
+  const isFinalized =
+    localApprovalStatus === "approved" || localApprovalStatus === "rejected";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -146,7 +148,11 @@ export function DetailsSheet({
             <div className="flex gap-2">
               <ConfirmDialog
                 trigger={
-                  <Button size="sm" variant="outline" disabled={loading || isFinalized}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={loading || isFinalized}
+                  >
                     Reject
                   </Button>
                 }

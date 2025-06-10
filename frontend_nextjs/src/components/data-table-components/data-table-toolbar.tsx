@@ -16,7 +16,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { SettingSheet } from "../setting-sheet";
+import { SettingSheet } from "../sheet/setting-sheet";
 import router from "next/router";
 
 // Tipe untuk variant

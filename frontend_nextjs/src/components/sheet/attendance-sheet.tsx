@@ -13,11 +13,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "./ui/textarea";
-import { TextareaField } from "./form/text-area";
-import { FilePreviewDialog } from "./dialogs/file-preview-dialog";
+import { Textarea } from "../ui/textarea";
+import { TextareaField } from "../form/text-area";
+import { FilePreviewDialog } from "../dialogs/file-preview-dialog";
 import { IconEye, IconFile } from "@tabler/icons-react";
-import DownloadButton from "./ui/download-button";
+import DownloadButton from "../ui/download-button";
 
 interface SettingsSheetProps {
   children?: ReactNode;
