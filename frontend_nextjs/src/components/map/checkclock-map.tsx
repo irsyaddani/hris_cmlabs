@@ -4,9 +4,11 @@ import {
   IconMapPinFilled,
 } from "@tabler/icons-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Map, Marker, Source, Layer, MapRef } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
+import axios from "axios";
 
 interface LocationSuggestion {
   id: string;
@@ -38,15 +40,19 @@ interface CheckclockMapProps {
     longitude: number;
   }) => void;
   initialRadius?: number;
+  companyId?: number; // Prop untuk companyId
 }
 
 export default function CheckclockMap({
   onLocationChange,
   initialRadius = 250, // Default 250m
 }: CheckclockMapProps) {
+  const DEFAULT_LONGITUDE = 112.6322144;
+  const DEFAULT_LATITUDE = -7.9546738;
+
   const [viewState, setViewState] = useState({
-    longitude: 112.6322144,
-    latitude: -7.9546738,
+    longitude: DEFAULT_LONGITUDE,
+    latitude: DEFAULT_LATITUDE,
     zoom: 17,
   });
 
@@ -54,6 +60,8 @@ export default function CheckclockMap({
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // State untuk loading data dari API
+  const [error, setError] = useState<string | null>(null); // State untuk error API
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const mapRef = useRef<MapRef | null>(null);
@@ -61,13 +69,106 @@ export default function CheckclockMap({
   const [currentLocation, setCurrentLocation] = useState<CheckclockLocation>({
     id: "current",
     name: "CMLABS HQ",
-    longitude: 112.6322144,
-    latitude: -7.9546738,
+    longitude: DEFAULT_LONGITUDE,
+    latitude: DEFAULT_LATITUDE,
     radius: initialRadius,
   });
 
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const router = useRouter();
+
   const MAPBOX_TOKEN =
     "pk.eyJ1IjoiYW1hbmRhZmFkaWxhMTEiLCJhIjoiY21iam1vbmJ4MGl0aTJrcTY5c3dwNm54eiJ9.bNz01unwDtQUnX7vBfjp0g";
+
+  useEffect(() => {
+    const fetchCompanyId = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please log in to access this page.");
+        setIsLoading(false);
+        router.push("/login");
+        return;
+      }
+
+      try {
+        console.log("📡 Fetching user profile from /api/user...");
+        const response = await axios.get("http://localhost:8000/api/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("✅ API response:", response.data);
+
+        // Handle possible nested data structure
+        const userData = response.data.data || response.data;
+        if (!userData.company_id) {
+          throw new Error("Company ID not found in user profile.");
+        }
+        setCompanyId(userData.company_id);
+      } catch (err: any) {
+        console.error(
+          "❌ Error fetching company ID:",
+          err.message,
+          err.response?.data
+        );
+        setError("Failed to load user profile. Please log in again.");
+        router.push("/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanyId();
+  }, [router]);
+
+  // Fetch clock settings once companyId is available
+  useEffect(() => {
+    if (!companyId) return;
+    console.log(companyId);
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      try {
+        console.log(`📡 Fetching clock settings for company ID: ${companyId}`);
+        const response = await axios.get(
+          `http://localhost:8000/api/clock-settings/${companyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        console.log("✅ Clock settings response:", response.data);
+        const data = response.data.data;
+        const name = data.locationName || "CMLabs";
+        const longitude = parseFloat(data.longitude) || DEFAULT_LONGITUDE;
+        const latitude = parseFloat(data.latitude) || DEFAULT_LATITUDE;
+        const radius = data.radius || 250;
+        setCurrentLocation({
+          id: "current",
+          name,
+          longitude,
+          latitude,
+          radius,
+        });
+        setViewState({
+          longitude,
+          latitude,
+          zoom: 17,
+        });
+      } catch (error: any) {
+        console.error(
+          "❌ Error fetching settings:",
+          error.message,
+          error.response?.data
+        );
+        setError("Failed to load clock settings.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, [companyId]);
 
   const createCircleWithTurf = (
     center: [number, number],
@@ -88,11 +189,7 @@ export default function CheckclockMap({
         geometry: circle.geometry,
       };
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error creating circle with Turf.js:", error.message);
-      } else {
-        console.error("Error creating circle with Turf.js:", error);
-      }
+      console.error("Error creating circle with Turf.js:", error);
       return createCircleFallback(center, radiusInMeters);
     }
   };
@@ -328,11 +425,7 @@ export default function CheckclockMap({
         setSuggestions([]);
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("❌ Fallback geocoding error:", error.message);
-      } else {
-        console.error("❌ Fallback geocoding error:", error);
-      }
+      console.error("❌ Fallback geocoding error:", error);
       setSuggestions([]);
     }
   };
@@ -382,11 +475,7 @@ export default function CheckclockMap({
         console.error(`❌ Reverse geocoding API failed: ${response.status}`);
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("❌ Reverse geocoding error:", error.message);
-      } else {
-        console.error("❌ Reverse geocoding error:", error);
-      }
+      console.error("❌ Reverse geocoding error:", error);
     }
     console.log("❌ Reverse geocoding returned null");
     return null;
@@ -401,7 +490,6 @@ export default function CheckclockMap({
 
       console.log(`📍 Moving map to coordinates: [${newLng}, ${newLat}]`);
 
-      // Consolidated state update
       setCurrentLocation((prev) => ({
         ...prev,
         longitude: newLng,
@@ -416,7 +504,6 @@ export default function CheckclockMap({
       setSearchQuery(suggestion.place_name);
       setShowSuggestions(false);
 
-      // Force map update
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [newLng, newLat],
@@ -482,7 +569,6 @@ export default function CheckclockMap({
         console.warn("⚠️ Reverse geocoding returned no results");
       }
 
-      // Force map update
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [newLng, newLat],
@@ -500,18 +586,17 @@ export default function CheckclockMap({
     console.log("📍 Getting current location from GPS...");
 
     if ("geolocation" in navigator) {
-      // Try single position first
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           handlePositionUpdate(position);
         },
         (error: GeolocationPositionError) => {
           handleGeolocationError(error);
-          startWatchingPosition(); // Fallback to watchPosition
+          startWatchingPosition();
         },
         {
           enableHighAccuracy: true,
-          timeout: 20000, // Increased to 20s
+          timeout: 20000,
           maximumAge: 0,
         }
       );
@@ -528,7 +613,6 @@ export default function CheckclockMap({
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         handlePositionUpdate(position);
-        // Clear watch after first accurate result
         if (position.coords.accuracy <= 30) {
           navigator.geolocation.clearWatch(watchId);
           console.log("✅ Stopped watchPosition: accurate location obtained");
@@ -562,7 +646,7 @@ export default function CheckclockMap({
       alert(
         "Location accuracy is low (<30m required). Please ensure GPS is enabled, move to an open area, or try on a mobile device."
       );
-      return; // Skip updating if accuracy is too low
+      return;
     }
 
     console.log("📍 Moving map to GPS location");
@@ -572,7 +656,6 @@ export default function CheckclockMap({
       zoom: 16,
     });
 
-    // Force map update
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [newLng, newLat],
@@ -680,6 +763,17 @@ export default function CheckclockMap({
 
   return (
     <div className="w-full h-96 relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-gray-600">Memuat lokasi...</span>
+        </div>
+      )}
+      {error && (
+        <div className="absolute top-4 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded z-20">
+          {error}
+        </div>
+      )}
       <div className="absolute top-4 left-4 right-4 z-10">
         <div className="relative">
           <div className="flex gap-2">
@@ -689,7 +783,7 @@ export default function CheckclockMap({
               </div>
               <input
                 type="text"
-                placeholder="Search for a building, address, or location in Indonesia..."
+                placeholder="Cari gedung, alamat, atau lokasi di Indonesia..."
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onFocus={() => {
@@ -710,7 +804,7 @@ export default function CheckclockMap({
             <button
               onClick={getCurrentLocation}
               className="px-3 py-2 bg-primary-900 text-white rounded-md hover:bg-primary-700 shadow-lg transition-colors"
-              title="Get current location"
+              title="Dapatkan lokasi saat ini"
             >
               <IconCurrentLocation className="h-5 w-5" />
             </button>
@@ -720,7 +814,7 @@ export default function CheckclockMap({
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-20">
               {isSearching && suggestions.length === 0 && (
                 <div className="px-3 py-2 text-gray-500 text-sm">
-                  Searching for locations...
+                  Mencari lokasi...
                 </div>
               )}
               {suggestions.map((suggestion) => (
@@ -751,7 +845,7 @@ export default function CheckclockMap({
                 suggestions.length === 0 &&
                 searchQuery.trim() && (
                   <div className="px-3 py-2 text-gray-500 text-sm">
-                    No locations found. Try a different search term.
+                    Tidak ada lokasi ditemukan. Coba istilah pencarian lain.
                   </div>
                 )}
             </div>
@@ -783,7 +877,7 @@ export default function CheckclockMap({
             <div className="bg-white px-2 py-1 rounded-md shadow-lg border mb-1 text-sm font-medium text-gray-800 whitespace-nowrap">
               {currentLocation.name}
               <div className="text-xs text-gray-500">
-                {currentLocation.radius}m radius • Drag to move
+                {currentLocation.radius}m radius • Geser untuk memindahkan
               </div>
             </div>
             <div style={{ color: "#ef4444", fontSize: "24px" }}>
@@ -804,19 +898,19 @@ export default function CheckclockMap({
 
       <div className="relative">
         <div className="absolute bottom-4 left-4 bg-white p-3 rounded-md shadow-lg border z-10">
-          <div className="text-sm font-medium text-gray-800 mb-2">Tooltip</div>
+          <div className="text-sm font-medium text-gray-800 mb-2">Petunjuk</div>
           <div className="flex items-center mb-1">
             <div className="w-4 h-4 bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed rounded mr-2"></div>
-            <span className="text-xs text-gray-600">Clock-in allowed area</span>
+            <span className="text-xs text-gray-600">Area izin clock-in</span>
           </div>
           <div className="flex items-center mb-1">
             <IconMapPinFilled className="h-4 w-4 text-red-500 mr-2" />
             <span className="text-xs text-gray-600">
-              Office location (draggable)
+              Lokasi kantor (dapat digeser)
             </span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            💡 Drag the pin or search to set location
+            💡 Geser pin atau cari untuk mengatur lokasi
           </div>
         </div>
       </div>

@@ -14,6 +14,11 @@ return new class extends Migration
         Schema::create('check_clock_settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->nullable()->constrained()->onDelete('cascade');           
+            $table->string('locationName')->nullable();
+            $table->string('detailAddress')->nullable();
+            $table->decimal('latitude', 18, 15)->nullable();
+            $table->decimal('longitude', 18, 15)->nullable();
+            $table->integer('radius')->nullable();
             $table->time('clockIn')->nullable();
             $table->time('clockOut')->nullable();
             $table->time('breakStart')->nullable();

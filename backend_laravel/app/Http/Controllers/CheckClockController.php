@@ -148,6 +148,21 @@ class CheckClockController extends Controller
         ]);
     }
 
+    public function destroy($id)
+    {
+        $checkclock = Checkclock::find($id);
+
+        if (!$checkclock) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        try {
+            $checkclock->delete();
+            return response()->json(['message' => 'Data berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menghapus data', 'error' => $e->getMessage()], 500);
+        }
+    }
 
     // Hitung durasi kerja (jam, menit)
     private function calculateWorkHours($clockIn, $clockOut)

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CheckClockController;
-use App\Http\Controllers\API\ClockSettingsController;
+use App\Http\Controllers\ClockSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,9 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         $employee = $user->employee; // pastikan relasi 'employee' ada di model User
+        $company = $user->company; // pastikan relasi 'employee' ada di model User
 
         return response()->json([
             'id' => $user->id,
+            'company_id' => $company->id,
             'email' => $user->email,
             'level' => $employee->level ?? null,
         ]);
@@ -49,17 +51,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', 'destroy');
     });
 
+    Route::prefix('/clock-settings')->controller(ClockSettingsController::class)->group(function () {
+        Route::post('/', 'store'); // Ubah GET menjadi POST untuk menyimpan data
+        Route::get('/{companyId}', 'show'); // Gunakan nama parameter yang lebih jelas
+    });
+
 });
 
 
 
 // routes/api.php
 Route::get('/checkclocks', [CheckClockController::class, 'index']);
-Route::post('/clock-settings', [ClockSettingsController::class, 'store']);
-
 
 
 Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
-    Route::get('/', 'index'); // Ambil semua data
-    Route::put('/approval/{id}', 'updateApproval'); // Update status approval
+    Route::get('/', 'index');
+    Route::put('/approval/{id}', 'updateApproval');
+    Route::delete('/{id}', 'destroy');
 });
