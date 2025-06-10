@@ -68,7 +68,7 @@ const userData: User = {
   name: "Emir Abiyyu",
   email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
-  level: "user", // Change to "user" for testing user level
+  level: "admin", // Change to "user" for testing user level
 };
 
 // Function to get navigation items based on level

@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconX, IconEye } from "@tabler/icons-react";
 import { ConfirmDialog } from "../dialogs/confirm-dialog";
-import { SettingSheet } from "../setting-sheet";
+import { SettingSheet } from "../sheet/setting-sheet";
 import React from "react";
 import Link from "next/link";
 

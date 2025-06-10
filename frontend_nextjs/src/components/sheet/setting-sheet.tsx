@@ -13,9 +13,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { TextareaField } from "./form/text-area";
-import { Input } from "./ui/input";
-import CheckclockMap from "./map/checkclock-map";
+import { TextareaField } from "../form/text-area";
+import { Input } from "../ui/input";
+import CheckclockMap from "../map/checkclock-map";
 // import Maps from "./map/map";
 
 interface SettingsSheetProps {
