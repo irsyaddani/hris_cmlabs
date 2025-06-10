@@ -14,8 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { FilePreviewDialog } from "../dialogs/file-preview-dialog";
 import { IconEye, IconFile } from "@tabler/icons-react";
-import DownloadButton from "./ui/download-button";
-import { ConfirmDialog } from "./dialogs/confirm-dialog";
+import DownloadButton from "../ui/download-button";
+import { ConfirmDialog } from "../dialogs/confirm-dialog";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
