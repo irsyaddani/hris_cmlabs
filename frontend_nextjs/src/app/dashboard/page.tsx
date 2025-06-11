@@ -79,11 +79,11 @@ function UserDashboard({ userName }: { userName: string }) {
                 recorded correctly.
               </span>
             </p>
-            <Link href="/checkclock">
+            <Link href="/checkclock/attendance-user">
               <Button
                 variant="default"
                 size="sm"
-                className="gap-4 bg-primary-900 hover:bg-primary-700 text-white hover:text-white"
+                className="gap-4 bg-primary-900 hover:bg-primary-700 text-white hover:text-white cursor-pointer"
               >
                 Clock in
               </Button>

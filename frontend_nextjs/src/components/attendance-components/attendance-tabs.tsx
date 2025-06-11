@@ -11,9 +11,34 @@ import { Textarea } from "../ui/textarea";
 import UploadFile from "../ui/upload-file";
 import CheckclockMapUser from "../map/checkclock-map-user";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+
+interface LocationData {
+  location: string;
+  detailAddress: string;
+  latitude: string;
+  longitude: string;
+  radius: number;
+}
+
+const defaultLocation: LocationData = {
+  location: "CMLABS HQ",
+  detailAddress: "Jl. Seruni No. 9, Lowokwaru, Kota Malang, Jawa Timur 65141",
+  latitude: "-7.9546738",
+  longitude: "112.6322144",
+  radius: 250,
+};
 
 export function AttendanceTabs() {
+  const [locationData, setLocationData] =
+    useState<LocationData>(defaultLocation);
+  const [radiusInput, setRadiusInput] = useState<string>("250");
   const [selectedWorkType, setSelectedWorkType] = useState("wfo");
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleWorkTypeChange = (value: string) => {
@@ -21,14 +46,6 @@ export function AttendanceTabs() {
     // Reset attendance data when work type changes
     setAttendanceData(null);
   };
-
-  interface OfficeConfig {
-    id: string;
-    name: string;
-    longitude: number;
-    latitude: number;
-    radius: number;
-  }
 
   interface AttendanceData {
     isWithinRadius: boolean;
@@ -41,38 +58,55 @@ export function AttendanceTabs() {
     message: string;
   }
 
-  // This would typically come from your API/database (admin config)
-  const [officeConfig, setOfficeConfig] = useState<OfficeConfig>({
-    id: "office-1",
-    name: "CMLABS HQ",
-    longitude: 112.6322144,
-    latitude: -7.9546738,
-    radius: 250, // 250 meters radius set by admin
-  });
-
   const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(
     null
   );
   const [isClockIn, setIsClockIn] = useState(false);
 
-  // Fetch office configuration from admin settings
   useEffect(() => {
-    // Replace this with your actual API call to get office config
-    const fetchOfficeConfig = async () => {
+    if (!companyId) return;
+    console.log(companyId);
+    const fetchSettings = async () => {
+      setIsLoading(true);
       try {
-        // Example API call:
-        // const response = await fetch('/api/office-config');
-        // const config = await response.json();
-        // setOfficeConfig(config);
+        console.log(`📡 Fetching clock settings for company ID: ${companyId}`);
+        const response = await axios.get(
+          `http://localhost:8000/api/clock-settings/${companyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        console.log("✅ Clock settings response:", response.data);
+        const data = response.data.data;
 
-        console.log("Office config loaded:", officeConfig);
-      } catch (error) {
-        console.error("Failed to load office configuration:", error);
+        const newLocationData = {
+          location: data?.locationName ?? defaultLocation.location,
+          detailAddress: data?.detailAddress ?? defaultLocation.detailAddress,
+          latitude: data?.latitude?.toString() ?? defaultLocation.latitude,
+          longitude: data?.longitude?.toString() ?? defaultLocation.longitude,
+          radius: data?.radius ?? defaultLocation.radius,
+        };
+
+        setLocationData(newLocationData);
+        setRadiusInput(String(data?.radius ?? defaultLocation.radius));
+      } catch (error: any) {
+        console.error(
+          "Error fetching settings:",
+          error.message,
+          error.response?.data
+        );
+        setError("Failed to load clock settings.");
+        setLocationData(defaultLocation);
+        setRadiusInput("250");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchOfficeConfig();
-  }, []);
+    fetchSettings();
+  }, [companyId]);
 
   // Handle location validation from the map component
   const handleLocationValidation = (data: AttendanceData) => {
@@ -93,7 +127,6 @@ export function AttendanceTabs() {
 
   // Handle check-in submission
   const handlePresentSubmit = async () => {
-    // For WFO: check if within radius
     if (
       selectedWorkType === "wfo" &&
       (!attendanceData || !attendanceData.isWithinRadius)
@@ -105,50 +138,40 @@ export function AttendanceTabs() {
     setIsClockIn(true);
 
     try {
-      // Prepare attendance data
-      const checkInData = {
-        timestamp: new Date().toISOString(),
-        workType: selectedWorkType,
-        location:
+      const now = new Date();
+      const jakartaDate = new Date(
+        now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+      );
+      const formattedDate = jakartaDate.toISOString().split("T")[0];
+
+      const payload = {
+        type: selectedWorkType,
+        clock_in: formattedDate,
+        latitude:
           selectedWorkType === "wfo" && attendanceData
-            ? {
-                latitude: attendanceData.userLocation.latitude,
-                longitude: attendanceData.userLocation.longitude,
-                accuracy: attendanceData.userLocation.accuracy,
-              }
+            ? attendanceData.userLocation.latitude
             : null,
-        office:
+        longitude:
           selectedWorkType === "wfo" && attendanceData
-            ? {
-                id: officeConfig.id,
-                name: officeConfig.name,
-                distance: attendanceData.distance,
-              }
+            ? attendanceData.userLocation.longitude
             : null,
-        isWithinRadius:
-          selectedWorkType === "wfo" ? attendanceData?.isWithinRadius : true,
       };
 
-      console.log("Submitting check-in data:", checkInData);
+      const response = await axios.post(
+        "http://localhost:8000/api/checkclock", // ganti jika pakai baseURL
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      // Replace with your actual API call
-      // const response = await fetch('/api/attendance/check-in', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(checkInData),
-      // });
-
-      // if (response.ok) {
-      //   alert('Check-in successful!');
-      // } else {
-      //   throw new Error('Check-in failed');
-      // }
-
-      // For demo purposes:
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      alert(`Check-in successful for ${selectedWorkType.toUpperCase()}! ✅`);
+      if (response.status === 200 || response.status === 201) {
+        alert(`Check-in successful for ${selectedWorkType.toUpperCase()}! ✅`);
+      } else {
+        throw new Error("Check-in failed");
+      }
     } catch (error) {
       console.error("Check-in error:", error);
       alert("Check-in failed. Please try again.");
@@ -157,10 +180,47 @@ export function AttendanceTabs() {
     }
   };
 
-  const handleAbsentSubmit = async () => {
-    // Handle absent submission logic here
-    console.log("Submitting absent request...");
-    alert("Absent request submitted successfully!");
+  const handleAbsentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const now = new Date();
+    const jakartaDate = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+    );
+    const formattedDate = jakartaDate.toISOString().split("T")[0];
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/checkclock",
+        {
+          type: selectedWorkType,
+          reason: reason,
+          start_date: formattedDate,
+          end_date: formattedDate,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      alert("Absent request submitted successfully!");
+      console.log("Submitted:", response.data);
+
+      // Reset form if needed
+      setReason(""); // assuming setReason exists
+      // Optionally reset other form states
+    } catch (error: any) {
+      console.error("Error submitting absent:", error);
+      alert(
+        error?.response?.data?.message || "Failed to submit absent request."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -195,9 +255,17 @@ export function AttendanceTabs() {
               <>
                 <div className="grid gap-2 w-full">
                   <Label htmlFor="location">Location</Label>
-                  <div className="rounded-lg w-full">
+                  <div className="rounded-lg w-full h-fit">
                     <CheckclockMapUser
-                      officeLocation={officeConfig}
+                      officeLocation={{
+                        latitude:
+                          attendanceData?.userLocation.latitude ??
+                          parseFloat(locationData.latitude),
+                        longitude:
+                          attendanceData?.userLocation.longitude ??
+                          parseFloat(locationData.longitude),
+                        radius: parseInt(locationData.radius, 10),
+                      }}
                       onLocationValidation={handleLocationValidation}
                     />
                   </div>
@@ -284,17 +352,21 @@ export function AttendanceTabs() {
           <div className="flex flex-col gap-5">
             <div className="grid gap-3 w-full">
               <Label htmlFor="Work Type">Absent Type</Label>
-              <RadioGroup defaultValue="sick" className="flex gap-5">
+              <RadioGroup
+                value={selectedWorkType}
+                onValueChange={(value) => setSelectedWorkType(value)}
+                className="flex gap-5"
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="sick" id="r1" />
                   <Label htmlFor="r1">Sick</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="annualLeave" id="r2" />
+                  <RadioGroupItem value="annual leave" id="r2" />
                   <Label htmlFor="r2">Annual Leave</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="permission" id="r3" />
+                  <RadioGroupItem value="permit" id="r3" />
                   <Label htmlFor="r3">Permission</Label>
                 </div>
               </RadioGroup>
@@ -302,7 +374,11 @@ export function AttendanceTabs() {
 
             <div className="grid gap-2 w-full">
               <Label>Reason</Label>
-              <Textarea placeholder="Enter a reason..." />
+              <Textarea
+                placeholder="Enter a reason..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
             </div>
 
             <div className="grid gap-2 w-full">
