@@ -145,6 +145,92 @@ class CheckClockController extends Controller
         return mime_content_type($fullPath) ?? 'application/octet-stream';
     }
 
+    public function show($id)
+    {
+        $checkclock = CheckClock::with('employee')->find($id);
+
+        if (!$checkclock) {
+            return response()->json([
+                'message' => 'Data karyawan tidak ditemukan.'
+            ], 404);
+        }
+
+        $employee = $checkclock->employee;
+
+        return response()->json([
+            'message' => 'Detail karyawan berhasil diambil.',
+            'data' => [
+                'id' => $checkclock->id,
+                'clock_in' => $checkclock->clock_in,
+                'clock_out' => $checkclock->clock_out,
+                'type' => $checkclock->type,
+                'status_approval' => $checkclock->status_approval,
+                'reason' => $checkclock->reason,
+                'start_date' => $checkclock->start_date,
+                'end_date' => $checkclock->end_date,
+                'latitude' => $checkclock->latitude,
+                'longitude' => $checkclock->longitude,
+                'created_at' => $checkclock->created_at,
+                'updated_at' => $checkclock->updated_at,
+                'employee' => $employee ? [
+                    'firstName' => $employee->firstName ?? '-',
+                    'lastName' => $employee->lastName ?? '-',
+                    'position' => $employee->position ?? '-',
+                    'avatarUrl' => $employee->avatar_url ?? null,
+                ] : null,
+            ]
+        ], 200);
+    }
+
+    public function updateApproval(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Check if user is authenticated and has a company
+        if (!$user || !$user->company) {
+            return response()->json(['message' => 'Unauthorized or company not found'], 403);
+        }
+
+        // Validate the request payload
+        $request->validate([
+            'status_approval' => 'required|in:approved,rejected',
+        ]);
+
+        // Find the CheckClock record
+        $checkclock = CheckClock::where('id', $id)
+            ->whereHas('employee', function ($query) use ($user) {
+                $query->where('company_id', $user->company->id);
+            })->first();
+
+        if (!$checkclock) {
+            return response()->json(['message' => 'CheckClock record not found or not authorized'], 404);
+        }
+
+        try {
+            // Update the status_approval
+            $checkclock->status_approval = $request->status_approval;
+            $checkclock->save();
+
+            // Log the update for debugging
+
+
+            return response()->json([
+                'message' => 'Approval status updated successfully',
+                'data' => [
+                    'id' => $checkclock->id,
+                    'status_approval' => $checkclock->status_approval,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            
+            return response()->json([
+                'message' => 'Failed to update approval status',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function destroy($id)
     {
         $checkclock = CheckClock::find($id);

@@ -132,12 +132,8 @@ export function AuthForm({
       
       const level = userRes.data.level;
       localStorage.setItem("userLevel", level);
-
-      if (level === "admin") {
-        router.push("/dashboard");
-      } else {
-        router.push("/employee-dashboard");
-      }
+      
+      router.push("/dashboard");
 
       console.log("Login success", { token, level });
       

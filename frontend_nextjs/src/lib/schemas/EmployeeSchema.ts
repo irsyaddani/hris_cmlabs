@@ -42,8 +42,13 @@ export const employeeSchema = z
 
     branch: z.string().min(1, "Branch is required"),
 
-    annualLeave: z.number().min(0).optional().nullable(), // Number type, optional, can be null
-
+    annualLeave: z
+      .number({
+        required_error: "Annual Leave is required",
+        invalid_type_error: "Annual Leave must be a number",
+      })
+      .min(0, "Annual Leave cannot be negative"),
+      
     bank: z.string().min(1, "Bank is required"),
     accountNumber: z
       .string()
@@ -56,20 +61,5 @@ export const employeeSchema = z
         /^[A-Za-z\s]+$/,
         "Account name must only contain letters and spaces"
       ),
-  })
-  .refine(
-    (data) => {
-      if (data.joinDate) {
-        const yearsWorked = differenceInYears(today, data.joinDate);
-        if (yearsWorked >= 1) {
-          return data.annualLeave !== null && data.annualLeave !== undefined;
-        }
-      }
-      return true;
-    },
-    {
-      message:
-        "Annual Leave is required for employees with 1+ years of service",
-      path: ["annualLeave"],
-    }
-  );
+  }
+);

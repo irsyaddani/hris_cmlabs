@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CheckClockController;
 use App\Http\Controllers\ClockSettingsController;
+use App\Http\Controllers\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -28,18 +30,9 @@ Route::controller(AuthController::class)->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     // Authenticated user
-    Route::get('/user', function (Request $request) {
-        $user = $request->user();
-        $employee = $user->employee; // pastikan relasi 'employee' ada di model User
-        $company = $user->company; // pastikan relasi 'employee' ada di model User
+    Route::get('/user', [UserController::class, 'getProfile']);
+    Route::post('/change-password', [UserController::class, 'changePassword']);
 
-        return response()->json([
-            'id' => $user->id,
-            'company_id' => $company->id,
-            'email' => $user->email,
-            'level' => $employee->level ?? null,
-        ]);
-    });
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Employees CRUD
@@ -52,12 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('/clock-settings')->controller(ClockSettingsController::class)->group(function () {
-        Route::post('/', 'store'); // Ubah GET menjadi POST untuk menyimpan data
-        Route::get('/{companyId}', 'show'); // Gunakan nama parameter yang lebih jelas
+        Route::post('/', 'store');
+        Route::get('/{companyId}', 'show');
     });
 
     Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
         Route::get('/', 'index');
+        Route::get('/{id}', 'show');
         Route::put('/approval/{id}', 'updateApproval');
         Route::delete('/{id}', 'destroy');
     });

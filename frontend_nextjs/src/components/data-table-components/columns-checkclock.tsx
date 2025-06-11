@@ -11,11 +11,25 @@ import { ConfirmDialog } from "../dialogs/confirm-dialog";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const updateApproval = async (id: string, status: string, router: ReturnType<typeof useRouter>) => {
+const updateApproval = async (
+  id: string,
+  status: string,
+  router: ReturnType<typeof useRouter>
+) => {
   try {
-    const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
-      status_approval: status,
-    });
+    const token = localStorage.getItem("token");
+    const response = await axios.put(
+      `http://localhost:8000/api/checkclock/approval/${id}`,
+      {
+        status_approval: status,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     console.log(`Approval updated: ${status}`, response.data);
     window.location.reload();
   } catch (err) {
@@ -23,7 +37,9 @@ const updateApproval = async (id: string, status: string, router: ReturnType<typ
   }
 };
 
-export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkclock>[] {
+export function columns(
+  router: ReturnType<typeof useRouter>
+): ColumnDef<Checkclock>[] {
   return [
     {
       id: "select",
@@ -282,9 +298,7 @@ export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkcl
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <DataTableRowActions row={row} variant="checkclock" />
-      ),
+      cell: ({ row }) => <DataTableRowActions row={row} variant="checkclock" />,
     },
   ];
 }

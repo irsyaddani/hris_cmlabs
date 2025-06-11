@@ -101,7 +101,9 @@ export default function EditEmployeePage() {
     setLoading(true);
     setError(null);
     setSuccess(null);
-
+    if (!isEligibleForAnnualLeave(data.joinDate)) {
+        data.annualLeave = 0;
+      }
     try {
       const response = await fetch(
         `http://localhost:8000/api/employees/${id}`,
@@ -130,7 +132,7 @@ export default function EditEmployeePage() {
       }
 
       // On success, redirect to detail page with success parameter
-      router.push(`/employment/employee-detail/${id}?success=edit-success`);
+      router.push(`/employment/employee-details/${id}?success=edit-success`);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Error occurred while updating the data.");
@@ -263,15 +265,7 @@ export default function EditEmployeePage() {
                   label="Annual Leave"
                   name="annualLeave"
                   type="number"
-                  required={isEligibleForAnnualLeave(joinDate)}
-                  placeholder={
-                    !isEligibleForAnnualLeave(joinDate)
-                      ? "Available after 1 year of employment"
-                      : ""
-                  }
-                  conditionalField="joinDate"
-                  conditionalCheck={isEligibleForAnnualLeave}
-                  disabledMessage="Available after 1 year of employment"
+                  required
                   icon={
                     <TooltipHelper
                       trigger={
@@ -279,8 +273,8 @@ export default function EditEmployeePage() {
                       }
                       content={
                         <p className="text-sm text-center">
-                          Only available for employees who have worked for at
-                          least 1 year
+                          Value ignored and set to 0 if employee hasn’t 
+                          reached 1 year.
                         </p>
                       }
                       side="right"
@@ -346,7 +340,7 @@ export default function EditEmployeePage() {
                 variant="secondary"
                 size="lg"
                 className="cursor-pointer hover:bg-neutral-200"
-                onClick={() => router.push(`/employment/employee-detail/${id}`)}
+                onClick={() => router.push(`/employment/employee-details/${id}`)}
               >
                 Cancel
               </Button>

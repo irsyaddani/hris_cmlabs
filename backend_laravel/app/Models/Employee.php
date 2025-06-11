@@ -31,6 +31,7 @@ class Employee extends Model
         'bank',
         'accountNumber',
         'bankAccountName',
+        'annualLeave',
         'level',
     ];
 
