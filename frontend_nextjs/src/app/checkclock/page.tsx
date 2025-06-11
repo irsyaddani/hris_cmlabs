@@ -201,7 +201,7 @@ export default function CheckClockPage() {
   const [alertType, setAlertType] = useState<"success" | "error">("success");
 
   // Fetch data only for admin
-useEffect(() => {
+  useEffect(() => {
     if (!user) return;
 
     if (user.level === "admin") {
@@ -395,17 +395,16 @@ useEffect(() => {
         />
       )}
 
-        {user.level === "admin" ? (
-          <AdminCheckClock
-            data={data}
-            loading={loading}
-            error={error}
-            updateApproval={updateApproval}
-          />
-        ) : (
-          <UserCheckClock userId={user.id} />
-        )}
-      </div>
+      {user.level === "admin" ? (
+        <AdminCheckClock
+          data={data}
+          loading={loading}
+          error={error}
+          updateApproval={updateApproval}
+        />
+      ) : (
+        <UserCheckClock userId={user.id} />
+      )}
     </div>
   );
 }
