@@ -233,14 +233,7 @@ export default function ClockHoursSettingPage() {
   };
 
   const handleCancel = () => {
-    setLocationData(defaultLocation);
-    setRadiusInput("250");
-    setWorkingHours({
-      clockIn: "",
-      clockOut: "",
-      startBreak: "",
-      endBreak: "",
-    });
+    router.back();
   };
 
   if (isLoading) {

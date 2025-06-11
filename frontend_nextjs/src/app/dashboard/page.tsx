@@ -109,6 +109,14 @@ function UserDashboard({ userName }: { userName: string }) {
 export default function DashboardPage() {
   const { user } = useUser();
 
+  if (!user) {
+  return (
+    <div className="p-4 text-gray-500 text-sm">
+      Loading...
+    </div>
+  );
+}
+
   return (
     <div className="flex flex-col flex-1 p-6 gap-5">
       {user.level === "admin" ? (
@@ -119,3 +127,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

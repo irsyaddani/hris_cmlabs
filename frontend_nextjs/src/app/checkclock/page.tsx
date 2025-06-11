@@ -30,6 +30,52 @@ interface CheckClock {
   endDate?: string;
 }
 
+// Utility functions for text formatting
+const formatDisplayText = (text: string): string => {
+  if (!text) return text;
+
+  return text
+    .split("_") // Split by underscore
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter of each word
+    .join(" "); // Join with spaces
+};
+
+// Special formatting function for positions with acronym handling
+const formatPositionText = (text: string): string => {
+  if (!text) return text;
+
+  // Define acronyms that should be fully uppercase
+  const acronyms = [
+    "UI",
+    "UX",
+    "QA",
+    "HR",
+    "IT",
+    "CEO",
+    "CTO",
+    "CIO",
+    "API",
+    "SEO",
+    "SQL",
+  ];
+
+  return text
+    .split("_")
+    .map((word) => {
+      const upperWord = word.toUpperCase();
+      // Check if the word is an acronym
+      if (acronyms.includes(upperWord)) {
+        return upperWord;
+      }
+      // Regular title case for non-acronyms
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ")
+    .replace(/\bUi\b/g, "UI") // Handle UI in compound words like "ui_designer"
+    .replace(/\bUx\b/g, "UX") // Handle UX in compound words
+    .replace(/UI UX/g, "UI/UX"); // Convert "UI UX" to "UI/UX"
+};
+
 // Admin CheckClock Component
 function AdminCheckClock({
   data,
@@ -155,15 +201,45 @@ export default function CheckClockPage() {
   const [alertType, setAlertType] = useState<"success" | "error">("success");
 
   // Fetch data only for admin
-  useEffect(() => {
+useEffect(() => {
+    if (!user) return;
+
     if (user.level === "admin") {
       fetchCheckClocks();
     } else {
       setLoading(false);
       setData([]);
     }
-  }, [user.level]);
+  }, [user]);
 
+  // async function fetchCheckClocks() {
+  //   try {
+  //     setLoading(true);
+  //     const token = localStorage.getItem("token");
+  //     const response = await fetch("http://localhost:8000/api/checkclock", {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok)
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+
+  //     const result = await response.json();
+  //     if (!result.data || !Array.isArray(result.data)) {
+  //       throw new Error("Format data API tidak sesuai");
+  //     }
+
+  //     setData(result.data);
+  //     setError(null);
+  //   } catch (error: any) {
+  //     console.error("Gagal mengambil data check clock", error);
+  //     setError(error.message || "Terjadi kesalahan saat mengambil data");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
   async function fetchCheckClocks() {
     try {
       setLoading(true);
@@ -172,9 +248,12 @@ export default function CheckClockPage() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -183,7 +262,15 @@ export default function CheckClockPage() {
         throw new Error("Format data API tidak sesuai");
       }
 
-      setData(result.data);
+      // Apply formatting to the data before setting it
+      const formattedData = result.data.map((item: any) => ({
+        ...item,
+        position: formatPositionText(item.position), // Apply position formatting
+        approval: formatDisplayText(item.approval), // Apply approval formatting
+        // Apply formatting to any other fields that need it
+      }));
+
+      setData(formattedData);
       setError(null);
     } catch (error: any) {
       console.error("Gagal mengambil data check clock", error);
@@ -203,6 +290,7 @@ export default function CheckClockPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ approval: status }),
@@ -289,24 +377,23 @@ export default function CheckClockPage() {
   }, [showErrorAlert]);
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6">
-      <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
-        {showSuccessAlert && (
-          <AlertMessage
-            type={alertType}
-            title="Success!"
-            message={alertMessage}
-            onClose={() => setShowSuccessAlert(false)}
-          />
-        )}
-        {showErrorAlert && (
-          <AlertMessage
-            type={alertType}
-            title="Error"
-            message={alertMessage}
-            onClose={() => setShowErrorAlert(false)}
-          />
-        )}
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+      {showSuccessAlert && (
+        <AlertMessage
+          type={alertType}
+          title="Success!"
+          message={alertMessage}
+          onClose={() => setShowSuccessAlert(false)}
+        />
+      )}
+      {showErrorAlert && (
+        <AlertMessage
+          type={alertType}
+          title="Error"
+          message={alertMessage}
+          onClose={() => setShowErrorAlert(false)}
+        />
+      )}
 
         {user.level === "admin" ? (
           <AdminCheckClock

@@ -1,7 +1,7 @@
 // lib/user-context.tsx
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   IconCategory,
   IconClockPin,
@@ -15,7 +15,7 @@ interface User {
   name: string;
   email: string;
   avatar: string;
-  level: "admin" | "user";
+  level: string;
 }
 
 // Define NavMain item type - Match exactly with your NavMain component
@@ -63,13 +63,13 @@ const userNavMain: NavMainItem[] = [
   },
 ];
 
-// Sample user data
-const userData: User = {
-  name: "Emir Abiyyu",
-  email: "m@example.com",
-  avatar: "/avatars/shadcn.jpg",
-  level: "user", // Change to "user" for testing user level
-};
+// // Sample user data
+// const userData: User = {
+//   name: "Emir Abiyyu",
+//   email: "m@example.com",
+//   avatar: "/avatars/shadcn.jpg",
+//   level: "admin", // Change to "user" for testing user level
+// };
 
 // Function to get navigation items based on level
 const getNavMainByLevel = (level: User["level"]): NavMainItem[] => {
@@ -85,16 +85,54 @@ const getNavMainByLevel = (level: User["level"]): NavMainItem[] => {
 
 // Create User Context
 interface UserContextType {
-  user: User;
+  user: User | null;
+  loading: boolean;
   getNavMainByLevel: (level: User["level"]) => NavMainItem[];
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // User Provider Component
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/user", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch user");
+
+        const data = await res.json();
+        setUser(data);
+        localStorage.setItem("user", JSON.stringify(data));
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
   return (
-    <UserContext.Provider value={{ user: userData, getNavMainByLevel }}>
+    <UserContext.Provider value={{ user, loading, getNavMainByLevel }}>
       {children}
     </UserContext.Provider>
   );

@@ -10,6 +10,8 @@ export const employmentTableSchema = z.object({
   position: z.string(),
   grade: z.string(),
   status: z.string(),
+  profile_picture: z.string().nullable().optional(),
+
   // type: z.enum(["income", "expense"]),
   // amount: z.number(),
   // date: z.string(),
