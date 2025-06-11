@@ -108,7 +108,7 @@ if (selectedImage) {
   formData.append("upload_preset", "nl52nz8z"); 
 
   const cloudinaryRes = await fetch(
-    `https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload`,
+    "https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload",
     {
       method: "POST",
       body: formData,
@@ -350,7 +350,7 @@ if (selectedImage) {
                 variant="secondary"
                 size="lg"
                 className="cursor-pointer hover:bg-neutral-200"
-                onClick={() => router.push(`/employment`)}
+                onClick={() => router.push("/employment")}
               >
                 Cancel
               </Button>

@@ -18,6 +18,8 @@ export default function EmploymentPage() {
   const [alertType, setAlertType] = useState<"success" | "error">("success"); // Dynamic type
   const searchParams = useSearchParams();
   const token = localStorage.getItem("token");
+  const [currentDate, setCurrentDate] = useState("");
+  const [activeCount, setActiveCount] = useState(0);
 
   useEffect(() => {
     // Check for success/failure parameters in URL
@@ -101,7 +103,9 @@ export default function EmploymentPage() {
           status: formatDisplayText(emp.employeeType), // Format status
           profile_picture: emp.profile_picture,
         }));
+        const active = formatted.filter((emp) => emp.status === "Employee").length;
         setData(formatted);
+        setActiveCount(active);
       })
       .catch((err) => {
         console.error("Failed to fetch employee data:", err);
@@ -139,6 +143,17 @@ export default function EmploymentPage() {
   //     });
   // }, []);
 
+  useEffect(() => {
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    setCurrentDate(formattedDate);
+  }, []);
+
+
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
       {/* Success Alert */}
@@ -165,19 +180,19 @@ export default function EmploymentPage() {
           icon={IconUsers}
           title="Total Employee"
           value={`${data.length} Orang`}
-          description="Update: 20 March 2025"
+          description={`Update: ${currentDate}`}
         />
         <MiniCard
           icon={IconUsers}
           title="New Employee"
           value="20 Orang"
-          description="Update: 20 March 2025"
+          description={`Update: ${currentDate}`}
         />
         <MiniCard
           icon={IconUsers}
           title="Active Employee"
-          value="1000 Orang"
-          description="Update: 20 March 2025"
+          value={`${activeCount} Orang`}
+          description={`Update: ${currentDate}`}
         />
       </div>
 
