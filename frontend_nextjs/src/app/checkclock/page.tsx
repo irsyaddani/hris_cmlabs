@@ -79,16 +79,8 @@ function UserCheckClock({ userName }: { userName: string }) {
 
   return (
     <div className="space-y-7">
-      <DataTable
-        data={dummyData}
-        columns={clockinColumns}
-        toolbarVariant="clockin"
-      />
-      <DataTable
-        data={dummyData}
-        columns={clockHistoryColumns}
-        toolbarVariant="clock-history"
-      />
+      <DataTable data={dummyData} columns={clockinColumns} toolbarVariant="clockin" />
+      <DataTable data={dummyData} columns={clockHistoryColumns} toolbarVariant="clock-history" />
     </div>
   );
 }
@@ -120,7 +112,14 @@ export default function CheckClockPage() {
   async function fetchCheckClocks() {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/checkclock");
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/api/checkclock", {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const result = await response.json();
@@ -140,12 +139,16 @@ export default function CheckClockPage() {
 
   async function updateApproval(id: string, status: string) {
     try {
+      const token = localStorage.getItem("token");
       const numericId = parseInt(id);
       const response = await fetch(
         `http://127.0.0.1:8000/api/checkclock/approval/${numericId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify({ approval: status }),
         }
       );
@@ -208,7 +211,6 @@ export default function CheckClockPage() {
           break;
       }
 
-      // Remove ?success=... from URL
       const url = new URL(window.location.href);
       url.searchParams.delete("success");
       window.history.replaceState({}, "", url.toString());
@@ -233,53 +235,34 @@ export default function CheckClockPage() {
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6">
       <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
-            {/* Success Alert */}
-            {showSuccessAlert && (
-              <AlertMessage
-                type={alertType}
-                title="Success!"
-                message={alertMessage}
-                onClose={() => setShowSuccessAlert(false)}
-              />
-            )}
-            {/* Error Alert */}
-            {showErrorAlert && (
-              <AlertMessage
-                type={alertType}
-                title="Error"
-                message={alertMessage}
-                onClose={() => setShowErrorAlert(false)}
-              />
-            )}
+        {showSuccessAlert && (
+          <AlertMessage
+            type={alertType}
+            title="Success!"
+            message={alertMessage}
+            onClose={() => setShowSuccessAlert(false)}
+          />
+        )}
+        {showErrorAlert && (
+          <AlertMessage
+            type={alertType}
+            title="Error"
+            message={alertMessage}
+            onClose={() => setShowErrorAlert(false)}
+          />
+        )}
 
-      {/* Error Alert */}
-      {showErrorAlert && (
-        <div className="mb-4">
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex justify-between items-center">
-            <div>
-              <strong>Error!</strong> {alertMessage}
-            </div>
-            <button
-              onClick={() => setShowErrorAlert(false)}
-              className="text-red-600 hover:text-red-800"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-
-      {user.level === "admin" ? (
-        <AdminCheckClock
-          data={data}
-          loading={loading}
-          error={error}
-          updateApproval={updateApproval}
-        />
-      ) : (
-        <UserCheckClock userName={user.name} />
-      )}
+        {user.level === "admin" ? (
+          <AdminCheckClock
+            data={data}
+            loading={loading}
+            error={error}
+            updateApproval={updateApproval}
+          />
+        ) : (
+          <UserCheckClock userName={user.name} />
+        )}
+      </div>
     </div>
-</div>
-  )
+  );
 }

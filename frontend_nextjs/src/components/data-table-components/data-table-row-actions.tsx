@@ -52,11 +52,12 @@ export function DataTableRowActions<TData>({
       const res = await fetch(endpoint, {
         method: "DELETE",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
       setConfirmOpen(false);
+      const result = await res.json();
+      console.log("Delete response:", result);
       variant === "employment"
         ? router.push("/employment?success=delete-success")
         : router.push("/checkclock?success=delete-success");
@@ -147,6 +148,7 @@ export function DataTableRowActions<TData>({
               workHours={data.workHours}
               startDate={data.startDate}
               endDate={data.endDate}
+              onDelete={handleDelete} // ini wajib untuk delete bekerja
             >
               <DropdownMenuItem
                 onSelect={(e) => {

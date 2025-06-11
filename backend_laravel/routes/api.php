@@ -56,16 +56,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{companyId}', 'show'); // Gunakan nama parameter yang lebih jelas
     });
 
+    Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::put('/approval/{id}', 'updateApproval');
+        Route::delete('/{id}', 'destroy');
+    });
 });
 
 
-
-// routes/api.php
-Route::get('/checkclocks', [CheckClockController::class, 'index']);
-
-
-Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::put('/approval/{id}', 'updateApproval');
-    Route::delete('/{id}', 'destroy');
-});

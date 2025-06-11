@@ -2,47 +2,98 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\CheckClock;
+use App\Models\CheckClockSetting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class CheckClockController extends Controller
 {
-    // Method untuk ambil data checkclock
     public function index()
     {
-        $data = CheckClock::with('employee')->get()->map(function ($item) {
-            $employee = $item->employee ?? null;
+        $user = Auth::user();
+
+        if (!$user || !$user->company) {
+            return response()->json(['message' => 'Unauthorized or company not found'], 403);
+        }
+
+        $companyId = $user->company->id;
+
+        $settings = CheckClockSetting::where('company_id', $companyId)->first();
+        $clockInTime = $settings && $settings->clockIn
+            ? Carbon::parse($settings->clockIn)
+            : Carbon::createFromTime(8, 0, 0);
+        $lateThreshold = $clockInTime->copy()->addMinutes(15);
+        $clockOutTime = $settings && $settings->clockOut
+            ? Carbon::parse($settings->clockOut)
+            : Carbon::createFromTime(17, 0, 0);
+
+        $checkClocks = CheckClock::whereHas('employee', function ($query) use ($companyId) {
+            $query->where('company_id', $companyId);
+        })->with('employee')->get();
+
+        $data = $checkClocks->map(function ($item) use ($clockInTime, $lateThreshold, $clockOutTime) {
+            $employee = $item->employee;
 
             $fullName = '-';
             if ($employee) {
                 $firstName = $employee->firstName ?? '';
                 $lastName = $employee->lastName ?? '';
-                $fullName = trim($firstName . ' ' . $lastName);
-                if ($fullName === '') {
-                    $fullName = '-';
-                }
+                $fullName = trim($firstName . ' ' . $lastName) ?: '-';
             }
 
-            // Default clockIn dan clockOut
             $clockIn = $item->clock_in;
             $clockOut = $item->clock_out;
 
-            // Tambahkan logika auto-clockout jika clockIn ada, clockOut kosong, dan sudah ganti hari
+            // Auto-clockout jika sudah lewat pukul 00:01 dari tanggal clock_in
             if ($clockIn && !$clockOut) {
-                $clockInDate = Carbon::parse($clockIn)->startOfDay(); // hanya tanggal
-                $today = now()->startOfDay();
+                $clockInDate = Carbon::parse($clockIn)->startOfDay();
+                $now = now();
+                $afterMidnight = $clockInDate->copy()->addDay()->addMinute(); // 00:01 esok harinya
 
-                if ($today->greaterThan($clockInDate)) {
-                    // Set clockOut ke jam 17:00 pada hari clockIn
-                    $autoClockOut = Carbon::parse($clockInDate)->setTime(17, 0, 0);
+                if ($now->greaterThanOrEqualTo($afterMidnight)) {
+                    $autoClockOut = $clockInDate->copy()->setTime(
+                        $clockOutTime->hour,
+                        $clockOutTime->minute,
+                        $clockOutTime->second
+                    );
                     $item->clock_out = $autoClockOut;
-                    $item->save(); // SIMPAN PERUBAHAN KE DATABASE
+                    $item->save();
                     $clockOut = $autoClockOut;
                 }
             }
 
-            // Hitung work time
+            $status = 'no-show';
+            $absentType = $item->type;
+            $clockInTimeParsed = $clockIn ? Carbon::parse($clockIn) : null;
+            $clockOutTimeParsed = $clockOut ? Carbon::parse($clockOut) : null;
+            $clockInStatus = !!$clockIn;
+
+            if ($absentType === 'sick') {
+                $status = 'permit';
+            } elseif ($absentType === 'annual leave') {
+                $status = 'annual leave';
+            } elseif (!$clockInStatus && $clockOutTimeParsed) {
+                $status = 'no-show';
+            } elseif (in_array($absentType, ['wfo', 'wfh']) && $clockInTimeParsed) {
+                // Sesuaikan late threshold dengan tanggal clockIn
+                $lateThresholdSameDate = $clockInTimeParsed->copy()->setTime(
+                    $lateThreshold->hour,
+                    $lateThreshold->minute,
+                    $lateThreshold->second
+                );
+
+                \Log::info('ClockIn: ' . $clockInTimeParsed->format('Y-m-d H:i:s'));
+                \Log::info('Late Threshold (adjusted): ' . $lateThresholdSameDate->format('Y-m-d H:i:s'));
+
+                if ($clockInTimeParsed->lessThanOrEqualTo($lateThresholdSameDate)) {
+                    $status = 'on time';
+                } else {
+                    $status = 'late';
+                }
+            }
+
             $workTime = $this->calculateWorkHours($clockIn, $clockOut);
 
             return [
@@ -54,7 +105,7 @@ class CheckClockController extends Controller
                 'clockOut' => $clockOut ? Carbon::parse($clockOut)->format('Y-m-d H:i:s') : null,
                 'workHours' => $workTime,
                 'approval' => $item->status_approval ?? '-',
-                'status' => $item->type ?? '-',
+                'status' => $status,
                 'reason' => $item->reason ?? '',
                 'proofFile' => $item->proof_file ? [
                     'fileName' => basename($item->proof_file),
@@ -66,133 +117,60 @@ class CheckClockController extends Controller
             ];
         });
 
-        if ($data->isEmpty()) {
-            return response()->json([
-                'data' => [],
-                'message' => 'No results found.'
-            ]);
-        }
-
-        return response()->json(['data' => $data]);
-    }
-
-
-
-    // Method untuk update approval status
-    public function updateApproval(Request $request, $id)
-    {
-        // Validasi input status_approval
-        $validated = $request->validate([
-            'status_approval' => 'required|string|in:pending,approved,rejected',
-        ]);
-
-        // Ambil data checkclock + relasi employee
-        $checkclock = CheckClock::with('employee')->find($id);
-
-        if (!$checkclock) {
-            return response()->json([
-                'message' => 'CheckClock data not found.',
-            ], 404);
-        }
-
-        // Hanya izinkan update jika type adalah permit atau annual leave
-        if (!in_array($checkclock->type, ['permit', 'annual leave'])) {
-            return response()->json([
-                'message' => 'Approval can only be updated for permit or annual leave.',
-            ], 400);
-        }
-
-        // Jangan izinkan mengubah status jika sudah final
-        if (in_array($checkclock->status_approval, ['approved', 'rejected'])) {
-            return response()->json([
-                'message' => 'Approval status is already final.',
-            ], 400);
-        }
-
-        // Update status_approval
-        $checkclock->status_approval = $validated['status_approval'];
-        $checkclock->save();
-
-        // Format data konsisten seperti di index()
-        $employee = $checkclock->employee ?? null;
-        $fullName = '-';
-        if ($employee) {
-            $firstName = $employee->firstName ?? '';
-            $lastName = $employee->lastName ?? '';
-            $fullName = trim($firstName . ' ' . $lastName) ?: '-';
-        }
-
-        $workTime = $this->calculateWorkHours($checkclock->clock_in, $checkclock->clock_out);
-
         return response()->json([
-            'message' => 'Approval status updated successfully.',
-            'data' => [
-                'id' => $checkclock->id,
-                'name' => $fullName,
-                'avatarUrl' => $employee?->avatar_url ?? 'https://yourcdn.com/avatars/default.jpg',
-                'position' => $employee?->position ?? '-',
-                'clockIn' => $checkclock->clock_in ? $checkclock->clock_in->format('Y-m-d H:i:s') : null,
-                'clockOut' => $checkclock->clock_out ? $checkclock->clock_out->format('Y-m-d H:i:s') : null,
-                'workHours' => $workTime,
-                'approval' => $checkclock->status_approval ?? '-',
-                'status' => $checkclock->type ?? '-',
-                'reason' => $checkclock->reason ?? '',
-                'proofFile' => $checkclock->proof_file ? [
-                    'fileName' => basename($checkclock->proof_file),
-                    'fileUrl' => asset('storage/' . $checkclock->proof_file),
-                    'fileType' => $this->getFileMimeType($checkclock->proof_file),
-                ] : null,
-                'startDate' => $checkclock->start_date ? Carbon::parse($checkclock->start_date)->format('Y-m-d') : null,
-                'endDate' => $checkclock->end_date ? Carbon::parse($checkclock->end_date)->format('Y-m-d') : null,
-            ]
+            'data' => $data,
+            'message' => $data->isEmpty() ? 'No results found.' : 'Success',
         ]);
     }
 
-    public function destroy($id)
-    {
-        $checkclock = Checkclock::find($id);
-
-        if (!$checkclock) {
-            return response()->json(['message' => 'Data tidak ditemukan'], 404);
-        }
-
-        try {
-            $checkclock->delete();
-            return response()->json(['message' => 'Data berhasil dihapus']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menghapus data', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    // Hitung durasi kerja (jam, menit)
     private function calculateWorkHours($clockIn, $clockOut)
     {
-        if (!$clockIn) {
+        if (!$clockIn || !$clockOut) {
             return ['hours' => 0, 'minutes' => 0];
         }
 
         $start = Carbon::parse($clockIn);
-        $end = $clockOut ? Carbon::parse($clockOut) : Carbon::now();
+        $end = Carbon::parse($clockOut);
+        $diff = $end->diff($start);
 
-        if ($end->lessThanOrEqualTo($start)) {
-            return ['hours' => 0, 'minutes' => 0];
-        }
-
-        $diffMinutes = $start->diffInMinutes($end);
-        $hours = intdiv($diffMinutes, 60);
-        $minutes = $diffMinutes % 60;
-
-        return ['hours' => $hours, 'minutes' => $minutes];
+        return [
+            'hours' => $diff->h,
+            'minutes' => $diff->i,
+        ];
     }
 
     private function getFileMimeType($filePath)
     {
         $fullPath = storage_path('app/public/' . $filePath);
+        return mime_content_type($fullPath) ?? 'application/octet-stream';
+    }
 
-        if (!file_exists($fullPath)) {
-            return 'application/octet-stream';
+    public function destroy($id)
+    {
+        $checkclock = CheckClock::find($id);
+
+        if (!$checkclock) {
+            return response()->json([
+                'message' => 'Data karyawan tidak ditemukan.'
+            ], 404);
         }
 
-        return mime_content_type($fullPath);
+        try {
+            if ($checkclock->user) {
+                $checkclock->user->delete();
+            }
+
+            $checkclock->delete();
+
+            return response()->json([
+                'message' => 'Data karyawan berhasil dihapus.'
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menghapus data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
