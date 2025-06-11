@@ -4,7 +4,43 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkclock } from "./schemas/checkclock-table-schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { IconEye } from "@tabler/icons-react";
+import Link from "next/link";
+
+// Helper function to format date
+const formatDate = (dateStr?: string | null): string => {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
+};
+
+// Helper function to format time
+const formatTime = (timeStr?: string | null): string => {
+  if (!timeStr) return "-";
+  return new Date(timeStr).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
+};
+
+// Helper function to calculate work hours
+const calculateWorkHours = (
+  clockIn?: string | null,
+  clockOut?: string | null
+): string => {
+  if (!clockIn) return "-";
+
+  const start = new Date(clockIn);
+  const end = clockOut ? new Date(clockOut) : new Date();
+
+  const diffMs = end.getTime() - start.getTime();
+  const hours = Math.max(0, diffMs / 1000 / 60 / 60);
+  return `${hours.toFixed(1)} hrs`;
+};
 
 const createClockHistoryColumns = (): ColumnDef<Checkclock>[] => [
   {
@@ -15,7 +51,7 @@ const createClockHistoryColumns = (): ColumnDef<Checkclock>[] => [
           table.getIsAllPageRowsSelected() ||
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
         className="translate-y-0.5"
       />
@@ -32,79 +68,104 @@ const createClockHistoryColumns = (): ColumnDef<Checkclock>[] => [
     enableHiding: false,
   },
   {
-    accessorKey: "date",
+    accessorKey: "startDate",
     header: "Date",
-    cell: ({ row }) => <div>{row.getValue("date") as string}</div>,
+    cell: ({ row }) => {
+      const startDate = row.getValue("startDate") as string | null;
+      const clockIn = row.getValue("clockIn") as string | null;
+      // Use start_date for annual leave, or derive from clock_in
+      const date =
+        startDate ||
+        (clockIn ? new Date(clockIn).toISOString().split("T")[0] : null);
+      return <div>{formatDate(date)}</div>;
+    },
   },
   {
     accessorKey: "clockIn",
     header: "Clock In",
     cell: ({ row }) => {
-      const value = row.getValue("clockIn") as string | undefined;
-      return (
-        <div>
-          {value
-            ? new Date(value).toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "Asia/Jakarta",
-              })
-            : "No Clock-In"}
-        </div>
-      );
+      const clockIn = row.getValue("clockIn") as string | null;
+      const type = row.getValue("status") as string;
+      if (type === "annual leave" || type === "sick") {
+        return <div>-</div>;
+      }
+      return <div>{formatTime(clockIn) || "No Clock-In"}</div>;
     },
   },
   {
     accessorKey: "clockOut",
     header: "Clock Out",
     cell: ({ row }) => {
-      const value = row.getValue("clockOut") as string | undefined;
-      return (
-        <div>
-          {value
-            ? new Date(value).toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "Asia/Jakarta",
-              })
-            : "No Clock-Out"}
-        </div>
-      );
+      const clockOut = row.getValue("clockOut") as string | null;
+      const clockIn = row.getValue("clockIn") as string | null;
+      const type = row.getValue("status") as string;
+      if (
+        type === "annual leave" ||
+        type === "sick" ||
+        (!clockOut && !clockIn)
+      ) {
+        return <div>-</div>;
+      }
+      return <div>{formatTime(clockOut) || "No Clock-Out"}</div>;
     },
   },
   {
     accessorKey: "workHours",
     header: "Work Hours",
     cell: ({ row }) => {
-      const workHours = row.getValue("workHours") as string | undefined;
-      return <div>{workHours || "-"}</div>;
+      const clockIn = row.getValue("clockIn") as string | null;
+      const clockOut = row.getValue("clockOut") as string | null;
+      const type = row.getValue("status") as string;
+      if (type === "annual leave" || type === "sick" || !clockIn) {
+        return <div>-</div>;
+      }
+      return <div>{calculateWorkHours(clockIn, clockOut)}</div>;
     },
   },
   {
-    accessorKey: "approval",
+    accessorKey: "statusApproval",
     header: "Approval",
     cell: ({ row }) => {
-      const approval = row.getValue("approval") as string | undefined;
-      return <div>{approval || "-"}</div>;
+      const approval = row.getValue("statusApproval") as string | null;
+      const type = row.getValue("status") as string;
+      if (type !== "annual leave") {
+        return <div>-</div>;
+      }
+      return <div>{approval || "Pending"}</div>;
     },
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const statusStyles: Record<string, string> = {
-        "on time": "text-green-600 bg-green-100",
-        late: "text-yellow-600 bg-yellow-100",
-        "no-show": "text-red-600 bg-red-100",
-        permit: "text-purple-600 bg-purple-100",
-        "annual leave": "text-blue-600 bg-blue-100",
-      };
+      const type = row.getValue("status") as string;
+      const clockIn = row.getValue("clockIn") as string | null;
+
+      let status = type;
+      let statusStyle = "bg-gray-100 text-gray-600";
+
+      if (type === "wfo" || type === "wfh") {
+        if (!clockIn) {
+          status = "no-show";
+          statusStyle = "text-red-600 bg-red-100";
+        } else {
+          status = type.toUpperCase();
+          statusStyle =
+            type === "wfo"
+              ? "text-green-600 bg-green-100"
+              : "text-blue-600 bg-blue-100";
+        }
+      } else if (type === "sick") {
+        status = "permit";
+        statusStyle = "text-purple-600 bg-purple-100";
+      } else if (type === "annual leave") {
+        status = "annual leave";
+        statusStyle = "text-blue-600 bg-blue-100";
+      }
+
       return (
         <span
-          className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${
-            statusStyles[status] || "bg-gray-100 text-gray-600"
-          }`}
+          className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${statusStyle}`}
         >
           {status}
         </span>
@@ -114,18 +175,18 @@ const createClockHistoryColumns = (): ColumnDef<Checkclock>[] => [
   {
     id: "actions",
     cell: ({ row }) => {
-      const clockIn = row.getValue("clockIn") as string | undefined;
-      const status = row.getValue("status") as string;
-
+      const clockIn = row.getValue("clockIn") as string | null;
+      const type = row.getValue("status") as string;
       // Show Details button for rows with clock-in or special status
-      if (clockIn || status === "annual leave" || status === "permit") {
+      if (clockIn || type === "annual leave" || type === "sick") {
         return (
-          <Button variant="outline" size="default">
-            Details
-          </Button>
+          <Link href={`/checkclock/attendance-detail?id=${row.original.id}`}>
+            <Button variant="outline" size="default">
+              Details
+            </Button>
+          </Link>
         );
       }
-
       // No button for no-show rows with no clock-in
       return null;
     },

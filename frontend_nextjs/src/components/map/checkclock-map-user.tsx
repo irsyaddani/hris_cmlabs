@@ -349,7 +349,7 @@ export default function CheckclockMapUser({
   };
 
   return (
-    <div className="w-full h-96 relative rounded-md">
+    <div className="w-full h-180 relative rounded-md">
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
           <div />

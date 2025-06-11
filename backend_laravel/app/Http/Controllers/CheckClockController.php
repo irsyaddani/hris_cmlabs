@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CheckClock;
 use App\Models\CheckClockSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -259,4 +260,109 @@ class CheckClockController extends Controller
             ], 500);
         }
     }
+
+    public function getByUserId()
+{
+    $user = Auth::user();
+
+    // Pastikan user terautentikasi dan memiliki relasi employee
+    if (!$user || !$user->employee) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized or employee data not found.',
+        ], 403);
+    }
+
+    try {
+        $employeeId = $user->employee->id;
+
+        $checkClocks = CheckClock::where('id_employee', $employeeId)
+            ->orderBy('id_employee', 'desc')
+            ->get();
+
+        // Format data satu per satu
+        $formattedData = $checkClocks->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'clockIn' => $item->clock_in,
+                'clockOut' => $item->clock_out,
+                'type' => $item->type,
+                'startDate' => $item->start_date,
+                'endDate' => $item->end_date,
+                'status' => $item->type,
+                'statusApproval' => $item->status_approval,
+                'reason' => $item->reason,
+                'file' => $item->file,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check clock data fetched successfully.',
+            'data' => $formattedData,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch check clock data.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'type' => 'nullable|string|in:wfo,wfh,sick,annual leave,permit',
+        'start_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
+        'clock_in' => 'nullable|date',
+        'clock_out' => 'nullable|date',
+        'reason' => 'nullable|string|max:255',
+        'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        'latitude' => 'nullable|numeric',
+        'longitude' => 'nullable|numeric',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    $filePath = null;
+    if ($request->hasFile('file')) {
+        $filePath = $request->file('file')->store('absent_files', 'public');
+    }
+
+    // Tentukan status approval berdasarkan type
+    $statusApproval = in_array($request->type, ['wfo', 'wfh', 'sick']) ? null : 'pending';
+
+    $checkClock = CheckClock::create([
+        'id_employee'     => Auth::user()->employee->id,
+        'type'            => $request->type ?? null,
+        'start_date'      => $request->start_date ?? null,
+        'end_date'        => $request->end_date ?? null,
+        'clock_in'        => $request->clock_in ?? null,
+        'clock_out'       => $request->clock_out ?? null,
+        'reason'          => $request->reason ?? null,
+        'file'            => $filePath,
+        'status_approval' => $statusApproval,
+        'latitude'        => $request->latitude ?? null,
+        'longitude'       => $request->longitude ?? null,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'CheckClock record created successfully.',
+        'data' => $checkClock,
+    ], 201);
+}
+
+
+
 }

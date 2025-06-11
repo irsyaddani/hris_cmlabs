@@ -51,7 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
         Route::get('/', 'index');
+        Route::get('/user', 'getByUserId');
         Route::get('/{id}', 'show');
+        Route::post('/', 'store');
         Route::put('/approval/{id}', 'updateApproval');
         Route::delete('/{id}', 'destroy');
     });

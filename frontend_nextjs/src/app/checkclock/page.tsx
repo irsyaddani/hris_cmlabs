@@ -19,6 +19,7 @@ interface CheckClock {
   workHours: number;
   approval: string;
   status: string;
+  statusApproval: string;
   reason?: string;
   proofFile?: {
     fileName: string;
@@ -57,30 +58,84 @@ function AdminCheckClock({
 }
 
 // User CheckClock Component
-function UserCheckClock({ userName }: { userName: string }) {
-  const dummyData = [
-    {
-      id: "1",
-      date: "2025-06-05",
-      clockIn: undefined,
-      clockOut: undefined,
-      status: "awaiting",
-      approval: undefined,
-    },
-    {
-      id: "7",
-      date: "2025-06-04",
-      clockIn: "2025-06-04T07:55:00+07:00",
-      clockOut: undefined,
-      status: "on time",
-      approval: undefined,
-    },
-  ];
+function UserCheckClock() {
+  const [userClockData, setUserClockData] = useState<CheckClock[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchUserClockData() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:8000/api/checkclock/user",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Gagal mengambil data check clock user");
+        }
+
+        const result = await response.json();
+        console.log("Raw API Response:", result); // Debug log
+        setUserClockData(result.data);
+
+        if (!result.data || !Array.isArray(result.data)) {
+          throw new Error("Format data API tidak sesuai");
+        }
+
+        setError(null);
+      } catch (error: any) {
+        console.error("Fetch error:", error); // Debug log
+        setError(error.message || "Terjadi kesalahan saat mengambil data");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserClockData();
+  }, []);
+
+  // Filter clock-in data for today - Fixed version
+  const today = new Date().toISOString().split("T")[0];
+  console.log("Today:", today);
+
+  const todayClockIn = userClockData.filter((item) => {
+    const itemDateRaw = item.startDate || item.clockIn;
+    const itemDate = itemDateRaw ? itemDateRaw.split("T")[0] : null;
+
+    console.log("Item Date:", itemDate);
+
+    return itemDate === today;
+  });
+
+  // Ambil satu entri saja jika duplikat
+  const uniqueTodayClockIn = todayClockIn.length > 0 ? [todayClockIn[0]] : [];
+
+  console.log("Today's filtered data:", uniqueTodayClockIn); // Debug log
+  console.log("All user data:", userClockData); // Debug log
 
   return (
     <div className="space-y-7">
-      <DataTable data={dummyData} columns={clockinColumns} toolbarVariant="clockin" />
-      <DataTable data={dummyData} columns={clockHistoryColumns} toolbarVariant="clock-history" />
+      <DataTable
+        data={loading ? [] : uniqueTodayClockIn}
+        columns={clockinColumns}
+        toolbarVariant="clockin"
+        loading={loading}
+        error={error}
+      />
+      <DataTable
+        data={loading ? [] : userClockData}
+        columns={clockHistoryColumns}
+        toolbarVariant="clock-history"
+        loading={loading}
+        error={error}
+      />
     </div>
   );
 }
@@ -116,11 +171,12 @@ export default function CheckClockPage() {
       const response = await fetch("http://localhost:8000/api/checkclock", {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
       const result = await response.json();
       if (!result.data || !Array.isArray(result.data)) {
@@ -147,7 +203,7 @@ export default function CheckClockPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ approval: status }),
         }
@@ -260,7 +316,7 @@ export default function CheckClockPage() {
             updateApproval={updateApproval}
           />
         ) : (
-          <UserCheckClock userName={user.name} />
+          <UserCheckClock userId={user.id} />
         )}
       </div>
     </div>

@@ -54,20 +54,20 @@ const isTimeAfter = (
 };
 
 // Helper function untuk mengecek apakah hari ini adalah hari libur
-const checkHoliday = async (date: Date): Promise<CalendarResponse> => {
-  try {
-    const dateString = date.toISOString().split("T")[0];
-    const response = await fetch(
-      `/api/calendar/check-holiday?date=${dateString}`
-    );
-    if (!response.ok) throw new Error("Holiday API error");
-    const data: CalendarResponse = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error checking holiday:", error);
-    return { isHoliday: false };
-  }
-};
+// const checkHoliday = async (date: Date): Promise<CalendarResponse> => {
+//   try {
+//     const dateString = date.toISOString().split("T")[0];
+//     const response = await fetch(
+//       `/api/calendar/check-holiday?date=${dateString}`
+//     );
+//     if (!response.ok) throw new Error("Holiday API error");
+//     const data: CalendarResponse = await response.json();
+//     return data;
+//   } catch (error) {
+//     console.error("Error checking holiday:", error);
+//     return { isHoliday: false };
+//   }
+// };
 
 // Helper function untuk mengecek apakah user bisa clock out
 const canClockOut = (
@@ -330,21 +330,21 @@ const createAttendanceColumns = (
     cell: ({ row }) => {
       const clockIn = row.getValue("clockIn") as string | undefined;
       const clockOut = row.getValue("clockOut") as string | undefined;
-      const status = row.getValue("status") as string;
+      const statusType = row.getValue("status") as string;
       const currentTime = new Date();
-      const rowDate = new Date(row.getValue("date"));
-      const [holidayStatus, setHolidayStatus] = React.useState<{
-        isHoliday: boolean;
-        holidayName?: string;
-      } | null>(null);
+      const rowDate = new Date(row.getValue("startDate"));
+      // const [holidayStatus, setHolidayStatus] = React.useState<{
+      //   isHoliday: boolean;
+      //   holidayName?: string;
+      // } | null>(null);
 
-      React.useEffect(() => {
-        const checkRowDateHoliday = async () => {
-          const status = await checkHoliday(rowDate);
-          setHolidayStatus(status);
-        };
-        checkRowDateHoliday();
-      }, [rowDate]);
+      // React.useEffect(() => {
+      //   const checkRowDateHoliday = async () => {
+      //     const status = await checkHoliday(rowDate);
+      //     setHolidayStatus(status);
+      //   };
+      //   checkRowDateHoliday();
+      // }, [rowDate]);
 
       const clockInStatus = !!clockIn;
       const clockOutStatus = !!clockOut;
@@ -365,9 +365,9 @@ const createAttendanceColumns = (
         return rowDateStart <= today;
       };
 
-      if (holidayStatus === null) return null;
+      // if (holidayStatus === null) return null;
 
-      if (status === "annual leave" || status === "permit") {
+      if (statusType === "annual leave" || statusType === "permit") {
         return (
           <Button
             disabled
@@ -379,35 +379,36 @@ const createAttendanceColumns = (
         );
       }
 
-      if (holidayStatus.isHoliday && !clockInStatus) {
-        const title = holidayStatus.holidayName
-          ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
-          : "Holiday - Clock in disabled";
-        return (
-          <Button disabled variant="secondary" title={title}>
-            Clock In
-          </Button>
-        );
-      }
+      // if (holidayStatus.isHoliday && !clockInStatus) {
+      //   const title = holidayStatus.holidayName
+      //     ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
+      //     : "Holiday - Clock in disabled";
+      //   return (
+      //     <Button disabled variant="secondary" title={title}>
+      //       Clock In
+      //     </Button>
+      //   );
+      // }
 
       const isNewDay = () => {
-        const today = new Date();
-        const isDifferentDay = today.toDateString() !== rowDate.toDateString();
+        const today = new Date().toISOString().split("T")[0];
+        const isDifferentDay = today !== rowDate.toDateString();
         const isNotFutureResult = isNotFuture();
+
         return isDifferentDay && isNotFutureResult;
       };
 
       if (!clockInStatus && isNewDay()) {
-        if (holidayStatus.isHoliday) {
-          const title = holidayStatus.holidayName
-            ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
-            : "Holiday - Clock in disabled";
-          return (
-            <Button disabled variant="secondary" title={title}>
-              Clock In
-            </Button>
-          );
-        }
+        // if (holidayStatus.isHoliday) {
+        //   const title = holidayStatus.holidayName
+        //     ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
+        //     : "Holiday - Clock in disabled";
+        //   return (
+        //     <Button disabled variant="secondary" title={title}>
+        //       Clock In
+        //     </Button>
+        //   );
+        // }
         return (
           <Link href="/checkclock/attendance-user">
             <Button
