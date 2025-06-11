@@ -194,7 +194,11 @@ export default function AttendanceDetailPage() {
                   <div className="flex gap-2">
                     <ConfirmDialog
                       trigger={
-                        <Button size="sm" variant="outline">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-white bg-danger-main hover:bg-danger-hover  cursor-pointer"
+                        >
                           Reject
                         </Button>
                       }
@@ -208,7 +212,7 @@ export default function AttendanceDetailPage() {
                         <Button
                           size="sm"
                           variant="default"
-                          className="text-white"
+                          className="text-white hover:bg-primary-700 bg-primary-900 cursor-pointer"
                         >
                           Approve
                         </Button>
@@ -348,7 +352,14 @@ export default function AttendanceDetailPage() {
 
         <div className="flex justify-end">
           <ConfirmDialog
-            trigger={<Button variant="destructive">Delete</Button>}
+            trigger={
+              <Button
+                variant="destructive"
+                className="bg-danger-main hover:bg-danger-hover cursor-pointer"
+              >
+                Delete
+              </Button>
+            }
             title="Are you sure?"
             description="This action cannot be undone. This will permanently delete the attendance record."
             confirmText="Delete"
