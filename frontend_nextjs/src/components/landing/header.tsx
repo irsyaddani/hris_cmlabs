@@ -138,14 +138,14 @@ export const Header = () => {
               className="cursor-pointer"
               onClick={() => router.push("/auth/login")}
             >
-              Masuk
+              Login
             </Button>
           </Link>
           <Button
             className=" bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
             onClick={() => router.push("/auth/login")}
           >
-            Daftar Sekarang
+            Sign Up
           </Button>
         </div>
         <div className="flex w-12 shrink lg:hidden items-end justify-end">
