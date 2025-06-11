@@ -47,6 +47,11 @@ class AuthController extends Controller
         ]);
         
         $checkclocksetting = CheckclockSetting::create([
+            'locationName' => $request->locationName ?? null,
+            'detailAddress' => $request->detailAddress ?? null,
+            'latitude' => $request->latitude ?? null,
+            'longitude' => $request->longitude ?? null,
+            'radius' => $request->radius ?? null,
             'clockIn' => $request->clockIn ?? null,
             'clockOut' => $request->clockOut ?? null,
             'breakStart' => $request->breakStart ?? null,

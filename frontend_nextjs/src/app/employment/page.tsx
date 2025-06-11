@@ -20,6 +20,7 @@ export default function EmploymentPage() {
   const token = localStorage.getItem("token");
   const [currentDate, setCurrentDate] = useState("");
   const [activeCount, setActiveCount] = useState(0);
+  const [newEmployeeCount, setNewEmployeeCount] = useState(0);
 
   useEffect(() => {
     // Check for success/failure parameters in URL
@@ -92,6 +93,8 @@ export default function EmploymentPage() {
         },
       })
       .then((res) => {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const formatted = res.data.data.map((emp: any) => ({
           id: emp.id,
           employee_code: emp.employee_code,
@@ -102,10 +105,17 @@ export default function EmploymentPage() {
           grade: formatDisplayText(emp.grade), // Format grade
           status: formatDisplayText(emp.employeeType), // Format status
           profile_picture: emp.profile_picture,
+          join_date: emp.join_date,
         }));
         const active = formatted.filter((emp) => emp.status === "Employee").length;
         setData(formatted);
         setActiveCount(active);
+
+         const newEmployees = formatted.filter((emp) => {
+            const joinDate = new Date(emp.join_date);
+            return joinDate > oneYearAgo;
+          }).length;
+        
       })
       .catch((err) => {
         console.error("Failed to fetch employee data:", err);
@@ -185,7 +195,7 @@ export default function EmploymentPage() {
         <MiniCard
           icon={IconUsers}
           title="New Employee"
-          value="20 Orang"
+        value={`${newEmployeeCount} Orang`}
           description={`Update: ${currentDate}`}
         />
         <MiniCard
