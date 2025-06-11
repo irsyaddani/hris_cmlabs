@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "./password-input";
 import { IconUserCircle, IconArrowLeft } from "@tabler/icons-react";
 import { useEffect } from "react";
+import { useUser } from "@/lib/user-context";
 
 import React from "react";
 import axios from "axios";
@@ -40,6 +41,7 @@ export function AuthForm({
   token = "",
 }: AuthFormProps) {
   const router = useRouter();
+  const { setUser } = useUser();
   const getSchema = () => {
     switch (type) {
       case "signup":
@@ -132,8 +134,11 @@ export function AuthForm({
       
       const level = userRes.data.level;
       localStorage.setItem("userLevel", level);
+
+      // const user = await fetchUser();  // ambil data user
+      // setUser(user); 
       
-      router.push("/dashboard");
+      window.location.replace("/dashboard");
 
       console.log("Login success", { token, level });
       
@@ -146,6 +151,16 @@ export function AuthForm({
     } 
 
   };
+  
+  // const fetchUser = async () => {
+  //   const token = localStorage.getItem("token");
+  //   const res = await axios.get(`${API_URL}/api/user`, {
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   });
+  //   return res.data;
+  // };
 
   // Fungsi handle signup
   const handleSignup = async (data: RegisterFormType) => {
@@ -239,7 +254,7 @@ export function AuthForm({
             type="button"
             variant="ghost"
             onClick={onBack}
-            className="flex items-center gap-2 w-fit px-0"
+            className="flex items-center gap-2 w-fit px-0 cursor-pointer"
           >
             <IconArrowLeft className="h-24 w-24" />
             <span className="text-md font-normal">Back</span>
@@ -409,7 +424,7 @@ export function AuthForm({
         <Button
           disabled={isLoading}
           type="submit"
-          className="text-white font-medium bg-[var(--color-primary-900)] hover:bg-[var(--color-primary-700)]"
+          className="text-white font-medium bg-[var(--color-primary-900)] hover:bg-[var(--color-primary-700)] cursor-pointer"
         >
           {isLoading
             ? "Loading..."
@@ -437,7 +452,7 @@ export function AuthForm({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full flex items-center gap-2"
+                className="w-full flex items-center gap-2 cursor-pointer"
                 onClick={() => {
                   console.log(`${isSignup ? "Sign Up" : "Sign In"} with Google`);
                   window.location.href = `http://localhost:8000/auth/google?mode=${isSignup ? "signup" : "login"}`;
@@ -475,7 +490,7 @@ export function AuthForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full cursor-pointer"
               onClick={() => {
                 router.push("/auth/id-login")
                 console.log("Sign In with Employee ID")
@@ -490,7 +505,7 @@ export function AuthForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full cursor-pointer"
               onClick={() => {
                 router.push("/auth/login")
                 console.log("Sign In with Employee ID")
@@ -502,7 +517,7 @@ export function AuthForm({
           )}
 
           {isSignup && (
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-muted-foreground cursor-pointer">
               Already have an admin or employee account?{" "}
               <a href="/auth/login" className="text-black">
                 Sign in here
@@ -511,7 +526,7 @@ export function AuthForm({
           )}
 
           {(isLogin || isIdLogin) && (
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-muted-foreground cursor-pointer">
               Don&apos;t have an account yet?{" "}
               <a href="/auth/signup" className="text-black">
                 Sign up now and get started

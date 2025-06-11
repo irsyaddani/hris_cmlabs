@@ -86,6 +86,7 @@ export function NavUser({
       );
     } finally {
       localStorage.removeItem("token");
+      setUser(null);
       router.push("/auth/login");
     }
   };

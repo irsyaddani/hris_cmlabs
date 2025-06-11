@@ -123,6 +123,15 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const { user, getNavMainByLevel } = useUser();
+
+  if (!user) {
+    return (
+      <div className="p-4 text-gray-500 text-sm">
+        Loading sidebar...
+      </div>
+    );
+  }
+
   const navMainItems = getNavMainByLevel(user.level);
 
   return (
