@@ -88,7 +88,7 @@ const branchlabels: Record<string, string> = {
 export default function EmployeeDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id');
+  const id = searchParams?.get("id");
 
   console.log("SearchParams:", searchParams);
   console.log("ID from searchParams:", id);
@@ -101,7 +101,6 @@ export default function EmployeeDetailsPage() {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-
     if (!id) return;
 
     axios
