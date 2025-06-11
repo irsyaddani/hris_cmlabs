@@ -121,7 +121,8 @@ export default function CheckClockPage() {
     try {
       setLoading(true);
       const response = await fetch("http://localhost:8000/api/checkclock");
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
       const result = await response.json();
       if (!result.data || !Array.isArray(result.data)) {
@@ -231,26 +232,25 @@ export default function CheckClockPage() {
   }, [showErrorAlert]);
 
   return (
-    <div className="min-h-[100vh] flex flex-col flex-1 p-6">
-      <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
-            {/* Success Alert */}
-            {showSuccessAlert && (
-              <AlertMessage
-                type={alertType}
-                title="Success!"
-                message={alertMessage}
-                onClose={() => setShowSuccessAlert(false)}
-              />
-            )}
-            {/* Error Alert */}
-            {showErrorAlert && (
-              <AlertMessage
-                type={alertType}
-                title="Error"
-                message={alertMessage}
-                onClose={() => setShowErrorAlert(false)}
-              />
-            )}
+    <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7">
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <AlertMessage
+          type={alertType}
+          title="Success!"
+          message={alertMessage}
+          onClose={() => setShowSuccessAlert(false)}
+        />
+      )}
+      {/* Error Alert */}
+      {showErrorAlert && (
+        <AlertMessage
+          type={alertType}
+          title="Error"
+          message={alertMessage}
+          onClose={() => setShowErrorAlert(false)}
+        />
+      )}
 
       {/* Error Alert */}
       {showErrorAlert && (
@@ -280,6 +280,5 @@ export default function CheckClockPage() {
         <UserCheckClock userName={user.name} />
       )}
     </div>
-</div>
-  )
+  );
 }

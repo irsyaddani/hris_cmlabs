@@ -289,15 +289,6 @@ export default function EmployeeDetailsPage() {
 
       <div className="flex justify-end">
         <div className="flex gap-3">
-          <Button
-            size="lg"
-            className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
-            onClick={() =>
-              router.push(`/employment/employee-edit/${id}`)
-            }
-          >
-            Edit data
-          </Button>
           <ConfirmDialog
             open={showDeleteDialog}
             onOpenChange={setShowDeleteDialog}
@@ -305,7 +296,7 @@ export default function EmployeeDetailsPage() {
               <Button
                 variant="destructive"
                 size="lg"
-                className="gap-4 bg-danger-main text-white hover:bg-danger-hover"
+                className="gap-4 bg-danger-main text-white hover:bg-danger-hover cursor-pointer"
               >
                 Delete
               </Button>
@@ -319,11 +310,18 @@ export default function EmployeeDetailsPage() {
             }
             confirmText="Delete"
             cancelText="No, cancel"
-            confirmClassName="bg-danger-main text-white hover:bg-danger-hover"
-            cancelClassName="hover:bg-neutral-200"
+            confirmClassName="bg-danger-main text-white hover:bg-danger-hover cursor-pointer"
+            cancelClassName="hover:bg-neutral-200 cursor-pointer"
             onConfirm={handleDelete}
             error={deleteError}
           />
+          <Button
+            size="lg"
+            className="gap-4 bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
+            onClick={() => router.push(`/employment/employee-edit/${id}`)}
+          >
+            Edit data
+          </Button>
         </div>
       </div>
     </div>
