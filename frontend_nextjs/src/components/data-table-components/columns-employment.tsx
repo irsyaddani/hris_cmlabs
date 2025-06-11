@@ -43,23 +43,26 @@ export const columns: ColumnDef<Employee>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
     ),
-    cell: ({ row }) => {
-      const name = row.getValue("name") as string;
-      //   avatar
-      //   const avatarUrl = row.original.avatarUrl as string | undefined;
+cell: ({ row }) => {
+  const name = row.getValue("name") as string;
+  const avatarUrl = row.original.profile_picture;
 
-      return (
-        <div className="flex items-center gap-2">
-          {/* <img
-            src={avatarUrl || "/default-avatar.png"}
-            alt={name}
-            className="w-7 h-7 rounded-full object-cover"
-          /> */}
-          <div className="w-6 h-6 rounded-full bg-blue-500" />
-          <span className="capitalize">{name}</span>
-        </div>
-      );
-    },
+  return (
+    <div className="flex items-center gap-2">
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt={name}
+          className="w-7 h-7 rounded-full object-cover"
+        />
+      ) : (
+        <div className="w-7 h-7 rounded-full bg-blue-500" />
+      )}
+      <span className="capitalize">{name}</span>
+    </div>
+  );
+},
+
   },
   {
     accessorKey: "phone",

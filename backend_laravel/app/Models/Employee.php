@@ -33,6 +33,7 @@ class Employee extends Model
         'bankAccountName',
         'annualLeave',
         'level',
+        'profile_picture', // 👈 gunakan snake_case di sini
     ];
 
     protected $dates = ['birthDate', 'joinDate'];

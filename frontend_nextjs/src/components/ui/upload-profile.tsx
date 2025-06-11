@@ -2,7 +2,11 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { IconCamera, IconUpload, IconX } from "@tabler/icons-react";
 
-export default function SimpleProfileUpload() {
+type SimpleProfileUploadProps = {
+  onChange: (file: File) => void;
+};
+
+export default function SimpleProfileUpload({ onChange }: SimpleProfileUploadProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,6 +25,7 @@ export default function SimpleProfileUpload() {
       }
 
       setSelectedImage(file);
+      onChange(file); // ✅ Tambahkan ini agar file dikirim ke parent form
 
       // Create preview URL
       const reader = new FileReader();

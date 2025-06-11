@@ -99,6 +99,7 @@ export default function EmploymentPage() {
           position: formatPositionText(emp.position), // Format position with special handling
           grade: formatDisplayText(emp.grade), // Format grade
           status: formatDisplayText(emp.employeeType), // Format status
+          profile_picture: emp.profile_picture,
         }));
         setData(formatted);
       })

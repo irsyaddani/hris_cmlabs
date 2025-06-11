@@ -48,6 +48,7 @@ class EmployeeController extends Controller
         // Validasi input dari frontend
         
         $validator = Validator::make($request->all(), [
+            'profile_picture' => 'nullable|string', 
             'firstName' => 'required|string',
             'lastName' => 'required|string',
             'birthPlace' => 'required|string',
@@ -94,6 +95,7 @@ class EmployeeController extends Controller
             ]);
 
             $employee = Employee::create([
+                'profile_picture' => $validated['profile_picture'] ?? null,
                 'firstName' => $validated['firstName'],
                 'lastName' => $validated['lastName'],
                 'birthPlace' => $validated['birthPlace'],
@@ -131,22 +133,34 @@ class EmployeeController extends Controller
 
 /// AMBIL DATA KARYAWAN ///
 
-    public function index()
-    {
-        try {
-            $employees = Employee::all(); // Ambil semua data dari tabel employees
+public function index()
+{
+    try {
+        $user = Auth::user();
 
+        if (!$user || !$user->company) {
             return response()->json([
-                'message' => 'Data karyawan berhasil diambil.',
-                'data' => $employees,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat mengambil data.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'message' => 'Unauthorized or company not found.',
+            ], 403);
         }
+
+        $companyId = $user->company->id;
+
+        // Ambil employee yang company_id-nya sesuai dengan company milik user login
+        $employees = Employee::where('company_id', $companyId)->get();
+
+        return response()->json([
+            'message' => 'Data karyawan berhasil diambil.',
+            'company_id' => $companyId, // ← ini akan dikembalikan juga
+            'data' => $employees,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Terjadi kesalahan saat mengambil data.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
 /// AMBIL DETAIL KARYAWAN ///
 
@@ -179,6 +193,7 @@ class EmployeeController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
+            'profile_picture' => 'nullable|string|url',
             'firstName' => 'required|string',
             'lastName' => 'required|string',
             'birthPlace' => 'required|string',
@@ -244,6 +259,7 @@ class EmployeeController extends Controller
                 'accountNumber' => $validated['accountNumber'],
                 'bankAccountName' => $validated['bankAccountName'],
                 'annualLeave' => $validated['annualLeave'],
+                'profile_picture' => $validated['profile_picture'] ?? $employee->profile_picture,
                 'level'=> strtolower($validated['position']) === 'hr_manager' ? 'admin' : 'user',
                 'employee_code' => $employee->employee_code,
             ]);

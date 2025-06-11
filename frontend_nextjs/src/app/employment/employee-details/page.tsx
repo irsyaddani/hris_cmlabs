@@ -10,6 +10,8 @@ import { AlertMessage } from "@/components/ui/alert-message";
 import { differenceInYears } from "date-fns"; // Import for eligibility check
 
 interface Employee {
+  profile_picture?: string | null; 
+
   id: string;
   employee_code: string;
   firstName: string;
@@ -172,7 +174,17 @@ export default function EmployeeDetailsPage() {
         </h3>
         <div className="flex flex-col gap-7">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-16 h-16 bg-gray-400 rounded-full shrink-0" />
+{employee.profile_picture ? (
+  <img
+    src={employee.profile_picture}
+    alt={`${employee.firstName} ${employee.lastName}`}
+    className="w-16 h-16 rounded-full object-cover border border-gray-300"
+  />
+) : (
+  <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm">
+    N/A
+  </div>
+)}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <h2 className="text-2xl font-medium">
                 {employee.firstName} {employee.lastName}
