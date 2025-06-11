@@ -31,7 +31,7 @@ export function DataTableRowActions<TData>({
 
   const detailsHref =
     variant === "employment"
-      ? `/employment/employee-details/${id}`
+      ? `/employment/employee-details?id=${id}`
       : `/checkclock/attendance-detail?id=${id}`;
 
   async function handleDelete() {

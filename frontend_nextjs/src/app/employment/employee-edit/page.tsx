@@ -3,7 +3,7 @@
 import axios from "axios";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
@@ -16,17 +16,25 @@ import { differenceInYears } from "date-fns"; // For eligibility check
 import { IconHelpCircle } from "@tabler/icons-react"; // Tooltip icon
 import { TooltipHelper } from "@/components/ui/tooltip-helper"; // Assuming this is your tooltip component
 import { AlertMessage } from "@/components/ui/alert-message"; // For success/error messages
+import { TextField } from "@/components/form/text-field";
 
 // Define the params type for the dynamic route
-type Params = {
-  id: string;
-};
+// type Params = {
+//   id: string;
+// };
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 export default function EditEmployeePage() {
-  const params = useParams<Params>(); // Type the useParams hook with the Params type
-  const id = params?.id || ""; // Provide a default value or handle null
+  // const params = useParams<Params>(); // Type the useParams hook with the Params type
+  // const id = params?.id || ""; // Provide a default value or handle null
+  const searchParams = useSearchParams();
+  const id = searchParams?.get("id") || "";
+
+  console.log("SearchParams:", searchParams);
+  console.log("ID from searchParams:", id);
+  console.log("Current URL:", window.location.href);
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +110,8 @@ export default function EditEmployeePage() {
     setError(null);
     setSuccess(null);
     if (!isEligibleForAnnualLeave(data.joinDate)) {
-        data.annualLeave = 0;
-      }
+      data.annualLeave = 0;
+    }
     try {
       const response = await fetch(
         `http://localhost:8000/api/employees/${id}`,
@@ -132,7 +140,7 @@ export default function EditEmployeePage() {
       }
 
       // On success, redirect to detail page with success parameter
-      router.push(`/employment/employee-details/${id}?success=edit-success`);
+      router.push(`/employment/employee-details?id=${id}&success=edit-success`);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Error occurred while updating the data.");
@@ -153,18 +161,14 @@ export default function EditEmployeePage() {
             <div className="grid grid-cols-2 gap-7">
               <div className="flex flex-col space-y-4">
                 <div className="flex space-x-3">
-                  <TextFieldIcon label="First Name" name="firstName" required />
-                  <TextFieldIcon label="Last Name" name="lastName" required />
+                  <TextField label="First Name" name="firstName" required />
+                  <TextField label="Last Name" name="lastName" required />
                 </div>
                 <div className="flex space-x-3">
-                  <TextFieldIcon
-                    label="Birth Place"
-                    name="birthPlace"
-                    required
-                  />
+                  <TextField label="Birth Place" name="birthPlace" required />
                   <DatePicker label="Birth Date" name="birthDate" required />
                 </div>
-                <TextFieldIcon label="NIK" name="nik" required />
+                <TextField label="NIK" name="nik" required />
                 <SelectField
                   label="Gender"
                   name="gender"
@@ -194,17 +198,8 @@ export default function EditEmployeePage() {
                     { label: "Doctorate (S3)", value: "doctorate" },
                   ]}
                 />
-                <TextFieldIcon
-                  label="Email"
-                  name="email"
-                  type="email"
-                  required
-                />
-                <TextFieldIcon
-                  label="Mobile Number"
-                  name="mobileNumber"
-                  required
-                />
+                <TextField label="Email" name="email" type="email" required />
+                <TextField label="Mobile Number" name="mobileNumber" required />
               </div>
             </div>
           </FormSection>
@@ -273,8 +268,8 @@ export default function EditEmployeePage() {
                       }
                       content={
                         <p className="text-sm text-center">
-                          Value ignored and set to 0 if employee hasn’t 
-                          reached 1 year.
+                          Value ignored and set to 0 if employee hasn’t reached
+                          1 year.
                         </p>
                       }
                       side="right"
@@ -298,14 +293,14 @@ export default function EditEmployeePage() {
                     { label: "Mandiri", value: "mandiri" },
                   ]}
                 />
-                <TextFieldIcon
+                <TextField
                   label="Account Number"
                   name="accountNumber"
                   required
                 />
               </div>
               <div className="space-y-4">
-                <TextFieldIcon
+                <TextField
                   label="Bank Account Name"
                   name="bankAccountName"
                   required
@@ -340,7 +335,9 @@ export default function EditEmployeePage() {
                 variant="secondary"
                 size="lg"
                 className="cursor-pointer hover:bg-neutral-200"
-                onClick={() => router.push(`/employment/employee-details/${id}`)}
+                onClick={() =>
+                  router.push(`/employment/employee-details?id=${id}`)
+                }
               >
                 Cancel
               </Button>
@@ -349,7 +346,7 @@ export default function EditEmployeePage() {
                 type="submit"
                 size="lg"
                 disabled={loading}
-                className="gap-4 bg-primary-900 text-white hover:bg-primary-700"
+                className="gap-4 bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
               >
                 {loading ? "Loading..." : "Save"}
               </Button>

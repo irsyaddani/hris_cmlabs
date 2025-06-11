@@ -84,15 +84,16 @@ const branchlabels: Record<string, string> = {
 };
 
 // Define the params type for the dynamic route
-type Params = {
-  id: string;
-};
 
 export default function EmployeeDetailsPage() {
-  const params = useParams<Params>(); // Type the useParams hook with the Params type
-  const id = params?.id || ""; // Provide a default value or handle null
   const router = useRouter();
   const searchParams = useSearchParams();
+  const id = searchParams?.get('id');
+
+  console.log("SearchParams:", searchParams);
+  console.log("ID from searchParams:", id);
+  console.log("Current URL:", window.location.href);
+
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -100,6 +101,9 @@ export default function EmployeeDetailsPage() {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+
+    if (!id) return;
+
     axios
       .get(`http://localhost:8000/api/employees/${id}`, {
         headers: {
@@ -318,7 +322,10 @@ export default function EmployeeDetailsPage() {
           <Button
             size="lg"
             className="gap-4 bg-primary-900 text-white hover:bg-primary-700 cursor-pointer"
-            onClick={() => router.push(`/employment/employee-edit/${id}`)}
+            onClick={() => {
+              console.log("Navigating to edit with ID:", id);
+              router.push(`/employment/employee-edit?id=${id}`);
+            }}
           >
             Edit data
           </Button>
