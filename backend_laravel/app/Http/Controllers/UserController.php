@@ -11,7 +11,7 @@ class UserController extends Controller
     // Ambil data user dan relasinya (employee & company)
     public function getProfile(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load(['employee', 'company']);
 
         $employee = $user->employee; // relasi ke Employee model
         $company = $user->company;   // relasi ke Company model
@@ -22,6 +22,7 @@ class UserController extends Controller
             'email' => $user->email,
             'position' => $employee->position ?? null,
             'firstName' => $employee->firstName ?? null,
+            'avatar' => $employee->avatar ?? null,
             'lastName' => $employee->lastName ?? null,
             'name' => $employee ? "{$employee->firstName} {$employee->lastName}" : null,
             'level' => $employee->level ?? null,
