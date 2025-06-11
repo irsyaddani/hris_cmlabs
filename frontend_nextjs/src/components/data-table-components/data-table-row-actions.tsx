@@ -38,7 +38,7 @@ export function DataTableRowActions<TData>({
   const detailsHref =
     variant === "employment"
       ? `/employment/employee-details/${id}`
-      : `/checkclock?id=${id}`;
+      : `/checkclock/attendance-detail?id=${id}`;
 
   async function handleDelete() {
     const token = localStorage.getItem("token");
@@ -79,10 +79,13 @@ export function DataTableRowActions<TData>({
 
   function handleDetailsClick() {
     if (variant === "checkclock") {
-      setOpenSheet(true);
-      const url = new URL(window.location.href);
-      url.searchParams.set("id", id);
-      window.history.replaceState(null, "", url.toString());
+      // MODIFIED: Changed from opening sheet to navigating to page
+      router.push(detailsHref);
+      // OLD LOGIC COMMENTED OUT:
+      // setOpenSheet(true);
+      // const url = new URL(window.location.href);
+      // url.searchParams.set("id", id);
+      // window.history.replaceState(null, "", url.toString());
     } else {
       router.push(detailsHref);
     }
@@ -115,7 +118,8 @@ export function DataTableRowActions<TData>({
         </DropdownMenuContent>
       </DropdownMenu> */}
 
-      {/* {variant === "checkclock" && (
+      {/* COMMENTED OUT - OLD SHEET LOGIC:
+      {variant === "checkclock" && (
         <DetailsSheet open={openSheet} onOpenChange={handleSheetChange} />
       )} */}
 
@@ -132,31 +136,39 @@ export function DataTableRowActions<TData>({
         <DropdownMenuContent align="end" className="w-[160px]">
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
+
+          {/* MODIFIED: Changed checkclock variant to use regular DropdownMenuItem instead of DetailsSheet wrapper */}
           {variant === "checkclock" ? (
-            <DetailsSheet
-              id={data.id}
-              open={openSheet}
-              onOpenChange={handleSheetChange}
-              attendanceStatus={data.status}
-              reason={data.reason}
-              proofFile={data.proofFile}
-              name={data.name}
-              position={data.position}
-              clockIn={data.clockIn}
-              clockOut={data.clockOut}
-              workHours={data.workHours}
-              startDate={data.startDate}
-              endDate={data.endDate}
-            >
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault(); // biar dropdown nggak auto close
-                  handleDetailsClick();
-                }}
-              >
-                Details
-              </DropdownMenuItem>
-            </DetailsSheet>
+            // OLD LOGIC COMMENTED OUT:
+            // <DetailsSheet
+            //   id={data.id}
+            //   open={openSheet}
+            //   onOpenChange={handleSheetChange}
+            //   attendanceStatus={data.status}
+            //   reason={data.reason}
+            //   proofFile={data.proofFile}
+            //   name={data.name}
+            //   position={data.position}
+            //   clockIn={data.clockIn}
+            //   clockOut={data.clockOut}
+            //   workHours={data.workHours}
+            //   startDate={data.startDate}
+            //   endDate={data.endDate}
+            // >
+            //   <DropdownMenuItem
+            //     onSelect={(e) => {
+            //       e.preventDefault(); // biar dropdown nggak auto close
+            //       handleDetailsClick();
+            //     }}
+            //   >
+            //     Details
+            //   </DropdownMenuItem>
+            // </DetailsSheet>
+
+            // NEW LOGIC: Simple navigation to page
+            <DropdownMenuItem onClick={handleDetailsClick}>
+              Details
+            </DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={handleDetailsClick}>
               Details

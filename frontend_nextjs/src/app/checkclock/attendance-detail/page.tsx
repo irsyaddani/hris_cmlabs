@@ -12,14 +12,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { FilePreviewDialog } from "../dialogs/file-preview-dialog";
+import { FilePreviewDialog } from "@/components/dialogs/file-preview-dialog";
 import { IconEye, IconFile } from "@tabler/icons-react";
-import DownloadButton from "../ui/download-button";
-import { ConfirmDialog } from "../dialogs/confirm-dialog";
+import DownloadButton from "@/components/ui/download-button";
+import { ConfirmDialog } from "@/components/dialogs/confirm-dialog";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-interface DetailsSheetProps {
+interface AttendanceDetailPageProps {
   children?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -63,7 +63,7 @@ function formatDateRange(startDate?: string, endDate?: string): string {
   return `${start} - ${end}`;
 }
 
-export function DetailsSheet({
+export default function AttendanceDetailPage({
   children,
   open,
   onOpenChange,
@@ -79,7 +79,7 @@ export function DetailsSheet({
   startDate,
   endDate,
   approvalStatus = "pending",
-}: DetailsSheetProps) {
+}: AttendanceDetailPageProps) {
   const router = useRouter();
   const [localApprovalStatus, setLocalApprovalStatus] =
     useState(approvalStatus);
@@ -181,11 +181,17 @@ export function DetailsSheet({
               <div className="md:col-span-2">
                 <p className="text-sm text-muted-foreground">Date</p>
                 <p className="text-md font-medium">
-                  {new Date().toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {(() => {
+                    // For annual leave, use startDate; for regular attendance, use clockIn date
+                    const dateToShow = isAnnualLeave ? startDate : clockIn;
+                    return dateToShow && dateToShow !== "-"
+                      ? new Date(dateToShow).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "-";
+                  })()}
                 </p>
               </div>
 

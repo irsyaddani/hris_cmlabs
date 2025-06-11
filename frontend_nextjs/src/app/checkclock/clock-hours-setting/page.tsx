@@ -32,7 +32,8 @@ const defaultLocation: LocationData = {
 };
 
 export default function ClockHoursSettingPage() {
-  const [locationData, setLocationData] = useState<LocationData>(defaultLocation);
+  const [locationData, setLocationData] =
+    useState<LocationData>(defaultLocation);
   const [radiusInput, setRadiusInput] = useState<string>("250");
   const [workingHours, setWorkingHours] = useState<WorkingHours>({
     clockIn: "",
@@ -72,7 +73,11 @@ export default function ClockHoursSettingPage() {
         }
         setCompanyId(userData.company_id);
       } catch (err: any) {
-        console.error("Error fetching company ID:", err.message, err.response?.data);
+        console.error(
+          "Error fetching company ID:",
+          err.message,
+          err.response?.data
+        );
         setError("Failed to load user profile. Please log in again.");
         router.push("/login");
       } finally {
@@ -119,7 +124,11 @@ export default function ClockHoursSettingPage() {
           endBreak: data?.breakEnd?.slice(0, 5) ?? "",
         });
       } catch (error: any) {
-        console.error("Error fetching settings:", error.message, error.response?.data);
+        console.error(
+          "Error fetching settings:",
+          error.message,
+          error.response?.data
+        );
         setError("Failed to load clock settings.");
         setLocationData(defaultLocation);
         setRadiusInput("250");
@@ -214,7 +223,11 @@ export default function ClockHoursSettingPage() {
       );
       alert("Settings saved successfully!");
     } catch (error: any) {
-      console.error("Error saving settings:", error.message, error.response?.data);
+      console.error(
+        "Error saving settings:",
+        error.message,
+        error.response?.data
+      );
       alert("Failed to save settings. Please try again.");
     }
   };
@@ -421,6 +434,7 @@ export default function ClockHoursSettingPage() {
             type="button"
             variant="secondary"
             size="lg"
+            className="hover:bg-neutral-200 cursor-pointer"
             onClick={handleCancel}
           >
             Cancel
