@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Company;
+use App\Models\CheckClockSetting;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Http\Request;
 
@@ -47,6 +48,19 @@ Route::get('/api/auth/google/callback', function (Request $request) {
             'user_id' => $user->id,
             'company_id' => $company->id,
             'level' => 'admin',
+        ]);
+
+        $checkclocksetting = CheckclockSetting::create([
+            'locationName' => $request->locationName ?? null,
+            'detailAddress' => $request->detailAddress ?? null,
+            'latitude' => $request->latitude ?? null,
+            'longitude' => $request->longitude ?? null,
+            'radius' => $request->radius ?? null,
+            'clockIn' => $request->clockIn ?? null,
+            'clockOut' => $request->clockOut ?? null,
+            'breakStart' => $request->breakStart ?? null,
+            'breakEnd' => $request->breakEnd ?? null,
+            'company_id'  => $company->id,
         ]);
     }
 
