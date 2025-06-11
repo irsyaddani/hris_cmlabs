@@ -45,20 +45,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('/clock-settings')->controller(ClockSettingsController::class)->group(function () {
-        Route::post('/', 'store'); // Ubah GET menjadi POST untuk menyimpan data
-        Route::get('/{companyId}', 'show'); // Gunakan nama parameter yang lebih jelas
+        Route::post('/', 'store');
+        Route::get('/{companyId}', 'show');
     });
 
+    Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
+        Route::put('/approval/{id}', 'updateApproval');
+        Route::delete('/{id}', 'destroy');
+    });
 });
 
 
-
-// routes/api.php
-Route::get('/checkclocks', [CheckClockController::class, 'index']);
-
-
-Route::prefix('/checkclock')->controller(CheckClockController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::put('/approval/{id}', 'updateApproval');
-    Route::delete('/{id}', 'destroy');
-});

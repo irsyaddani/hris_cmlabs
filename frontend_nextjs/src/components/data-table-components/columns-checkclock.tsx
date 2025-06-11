@@ -11,11 +11,25 @@ import { ConfirmDialog } from "../dialogs/confirm-dialog";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const updateApproval = async (id: string, status: string, router: ReturnType<typeof useRouter>) => {
+const updateApproval = async (
+  id: string,
+  status: string,
+  router: ReturnType<typeof useRouter>
+) => {
   try {
-    const response = await axios.put(`http://localhost:8000/api/checkclock/approval/${id}`, {
-      status_approval: status,
-    });
+    const token = localStorage.getItem("token");
+    const response = await axios.put(
+      `http://localhost:8000/api/checkclock/approval/${id}`,
+      {
+        status_approval: status,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     console.log(`Approval updated: ${status}`, response.data);
     window.location.reload();
   } catch (err) {
@@ -23,7 +37,9 @@ const updateApproval = async (id: string, status: string, router: ReturnType<typ
   }
 };
 
-export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkclock>[] {
+export function columns(
+  router: ReturnType<typeof useRouter>
+): ColumnDef<Checkclock>[] {
   return [
     {
       id: "select",
@@ -185,7 +201,7 @@ export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkcl
         const approval = row.getValue("approval") as string;
         const id = row.original.id as string;
 
-        if (status === "permit" || status === "annual leave") {
+        if (status === "annual leave") {
           if (approval === "pending") {
             return (
               <div className="flex gap-2">
@@ -258,48 +274,7 @@ export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkcl
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => {
-        const absentType = row.original.status; // 'permit', 'annual leave', atau null
-        const clockInRaw = row.original.clockIn; // bisa null/undefined
-        const clockOutRaw = row.original.clockOut;
-
-        // Hardcoded work start & late threshold
-        const today = new Date(); // referensi tanggal hari ini
-        const workStartTime = new Date(today);
-        workStartTime.setHours(8, 0, 0, 0); // 08:00
-
-        const lateThreshold = new Date(today);
-        lateThreshold.setHours(8, 15, 0, 0); // 08:15
-
-        const clockOutTime = clockOutRaw ? new Date(clockOutRaw) : null;
-        const clockInTime = clockInRaw ? new Date(clockInRaw) : null;
-        const currentTime = new Date();
-        const clockInStatus = !!clockInRaw; // true jika ada jam clockIn
-
-        let status = "no-show";
-
-        if (absentType === "sick") {
-          status = "permit";
-        } else if (absentType === "annual leave") {
-          status = "annual leave";
-        } else if (
-          !clockInStatus &&
-          clockOutTime &&
-          currentTime >= clockOutTime
-        ) {
-          status = "no-show";
-        } else if (
-          absentType === "wfo" || absentType === "wfh" &&
-          clockInTime &&
-          clockInTime <= lateThreshold
-        ) {
-          status = "on time";
-        } else if (
-          absentType === "wfo" || absentType === "wfh" &&
-          clockInTime &&
-          clockInTime > lateThreshold
-        ) {
-          status = "late";
-        }
+        const status = (row.getValue("status") as string) || "no-show";
 
         const statusStyles: Record<string, string> = {
           "on time": "text-green-600 bg-green-100",
@@ -312,19 +287,18 @@ export function columns(router: ReturnType<typeof useRouter>): ColumnDef<Checkcl
 
         return (
           <span
-            className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${statusStyles[status]}`}
+            className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${
+              statusStyles[status] || statusStyles.unknown
+            }`}
           >
             {status}
           </span>
         );
       },
     },
-
     {
       id: "actions",
-      cell: ({ row }) => (
-        <DataTableRowActions row={row} variant="checkclock" />
-      ),
+      cell: ({ row }) => <DataTableRowActions row={row} variant="checkclock" />,
     },
   ];
 }
