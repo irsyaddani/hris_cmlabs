@@ -35,7 +35,7 @@ export default function SocialCallback() {
           if (user.level === "admin") {
             router.push("/dashboard");
           } else {
-            router.push("/user-dashboard");
+            router.push("/dashboard");
           }
         });
     } else {
