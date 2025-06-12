@@ -2,6 +2,7 @@
 
 import { TrendingUp } from "lucide-react";
 import { LabelList, Pie, PieChart } from "recharts";
+import { useMemo } from "react";
 
 import {
   Card,
@@ -17,46 +18,208 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-const chartData = [
-  { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-  { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },
-  { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
-  { browser: "other", visitors: 90, fill: "var(--color-other)" },
-];
+
+interface CheckClock {
+  id: number;
+  name: string;
+  avatarUrl?: string;
+  position: string;
+  clockIn: string | null;
+  clockOut: string | null;
+  workHours: number;
+  approval: string;
+  status: string;
+  reason?: string;
+  proofFile?: {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+  } | null;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface PieChartsLabelProps {
+  attendanceData?: CheckClock[];
+  loading?: boolean;
+  error?: string | null;
+  filterByUser?: string; // Optional: filter data by specific user
+  title?: string; // Optional: custom title
+  description?: string; // Optional: custom description
+}
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
+  count: {
+    label: "Employees",
   },
-  chrome: {
-    label: "Chrome",
-    color: "var(--chart-1)",
+  "on time": {
+    label: "On Time",
+    color: "#10b981", // green
   },
-  safari: {
-    label: "Safari",
-    color: "var(--chart-2)",
+  late: {
+    label: "Late",
+    color: "#f59e0b", // amber
   },
-  firefox: {
-    label: "Firefox",
-    color: "var(--chart-3)",
+  permit: {
+    label: "Permit",
+    color: "#3b82f6", // blue
   },
-  edge: {
-    label: "Edge",
-    color: "var(--chart-4)",
+  sick: {
+    label: "Sick",
+    color: "#8b5cf6", // purple
   },
-  other: {
-    label: "Other",
-    color: "var(--chart-5)",
+  absent: {
+    label: "Absent",
+    color: "#ef4444", // red
+  },
+  awaiting: {
+    label: "Awaiting",
+    color: "#6b7280", // gray
   },
 } satisfies ChartConfig;
 
-export function PieChartsLabel() {
+// Function untuk menghitung statistik attendance
+function calculateAttendanceStats(data: CheckClock[], filterByUser?: string) {
+  const today = new Date().toISOString().split("T")[0];
+
+  // Filter data untuk hari ini saja
+  let todayData = data.filter((item) => {
+    if (!item.clockIn) return item.status === "awaiting";
+    const clockInDate = new Date(item.clockIn).toISOString().split("T")[0];
+    return clockInDate === today;
+  });
+
+  // Filter by user if specified (for user dashboard)
+  if (filterByUser) {
+    todayData = todayData.filter((item) => item.name === filterByUser);
+  }
+
+  const statusCount = todayData.reduce((acc, item) => {
+    const status = item.status?.toLowerCase() || "awaiting";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Convert ke format yang dibutuhkan chart
+  const chartData = Object.entries(statusCount).map(([status, count]) => ({
+    status,
+    count,
+    // fill: chartConfig[status as keyof typeof chartConfig]?.color || "#6b7280",
+  }));
+
+  const total = todayData.length;
+  const onTimePercentage =
+    total > 0
+      ? (((statusCount["on time"] || 0) / total) * 100).toFixed(1)
+      : "0";
+
+  return {
+    chartData,
+    total,
+    onTimePercentage: parseFloat(onTimePercentage),
+    statusCount,
+  };
+}
+
+export function PieChartsLabel({
+  attendanceData = [],
+  loading = false,
+  error = null,
+  filterByUser,
+  title = "Today's Attendance",
+  description,
+}: PieChartsLabelProps) {
+  const stats = useMemo(
+    () => calculateAttendanceStats(attendanceData, filterByUser),
+    [attendanceData, filterByUser]
+  );
+
+  const cardTitle = filterByUser
+    ? title || "Your Attendance"
+    : title || "Today's Attendance";
+  const cardDescription = description || new Date().toLocaleDateString();
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>{cardTitle}</CardTitle>
+          <CardDescription>Loading attendance data...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
+          <div className="text-muted-foreground">Loading chart data...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>{cardTitle}</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
+          <div className="text-red-500 text-center">
+            <p className="font-medium">Failed to load attendance data</p>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle empty data
+  if (stats.total === 0) {
+    const emptyMessage = filterByUser
+      ? "No attendance record found for today"
+      : "No attendance data";
+    const emptyDescription = filterByUser
+      ? "You haven't clocked in today"
+      : "No records found for today";
+
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="items-center pb-0">
+          <CardTitle>{cardTitle}</CardTitle>
+          <CardDescription>{cardDescription}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
+          <div className="text-muted-foreground text-center">
+            <p className="font-medium">{emptyMessage}</p>
+            <p className="text-sm mt-1">{emptyDescription}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const footerText = filterByUser
+    ? `Your status today • ${Object.entries(stats.statusCount)
+        .map(
+          ([status, count]) =>
+            `${
+              chartConfig[status as keyof typeof chartConfig]?.label || status
+            }: ${count}`
+        )
+        .join(", ")}`
+    : `Total ${stats.total} employees • ${Object.entries(stats.statusCount)
+        .map(
+          ([status, count]) =>
+            `${
+              chartConfig[status as keyof typeof chartConfig]?.label || status
+            }: ${count}`
+        )
+        .join(", ")}`;
+
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Pie Chart - Label List</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>{cardTitle}</CardTitle>
+        <CardDescription>{cardDescription}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -65,16 +228,27 @@ export function PieChartsLabel() {
         >
           <PieChart>
             <ChartTooltip
-              content={<ChartTooltipContent nameKey="visitors" hideLabel />}
+              content={
+                <ChartTooltipContent
+                  nameKey="count"
+                  hideLabel
+                  formatter={(value, name, props) => [
+                    `${value} ${filterByUser ? "record" : "employees"}`,
+                    chartConfig[
+                      props.payload.status as keyof typeof chartConfig
+                    ]?.label || props.payload.status,
+                  ]}
+                />
+              }
             />
-            <Pie data={chartData} dataKey="visitors">
+            <Pie data={stats.chartData} dataKey="count">
               <LabelList
-                dataKey="browser"
+                dataKey="status"
                 className="fill-background"
                 stroke="none"
                 fontSize={12}
-                formatter={(value: keyof typeof chartConfig) =>
-                  chartConfig[value]?.label
+                formatter={(value: string) =>
+                  chartConfig[value as keyof typeof chartConfig]?.label || value
                 }
               />
             </Pie>
@@ -83,11 +257,10 @@ export function PieChartsLabel() {
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+          {stats.onTimePercentage}% on time today{" "}
+          <TrendingUp className="h-4 w-4" />
         </div>
-        <div className="leading-none text-muted-foreground">
-          Showing total visitors for the last 6 months
-        </div>
+        <div className="leading-none text-muted-foreground">{footerText}</div>
       </CardFooter>
     </Card>
   );
