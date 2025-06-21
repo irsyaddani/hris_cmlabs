@@ -2,15 +2,11 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkclock } from "./schemas/checkclock-table-schema";
-import { DataTableColumnHeader } from "./data-table-column-header";
-import { DataTableRowActions } from "./data-table-row-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { IconCheck, IconX, IconEye } from "@tabler/icons-react";
-import { ConfirmDialog } from "../dialogs/confirm-dialog";
-import { SettingSheet } from "../sheet/setting-sheet";
 import React from "react";
 import Link from "next/link";
+import axios from "axios";
 
 // Interface untuk work configuration yang bisa di-set oleh admin
 interface WorkConfig {
@@ -54,20 +50,20 @@ const isTimeAfter = (
 };
 
 // Helper function untuk mengecek apakah hari ini adalah hari libur
-// const checkHoliday = async (date: Date): Promise<CalendarResponse> => {
-//   try {
-//     const dateString = date.toISOString().split("T")[0];
-//     const response = await fetch(
-//       `/api/calendar/check-holiday?date=${dateString}`
-//     );
-//     if (!response.ok) throw new Error("Holiday API error");
-//     const data: CalendarResponse = await response.json();
-//     return data;
-//   } catch (error) {
-//     console.error("Error checking holiday:", error);
-//     return { isHoliday: false };
-//   }
-// };
+const checkHoliday = async (date: Date): Promise<CalendarResponse> => {
+  try {
+    const dateString = date.toISOString().split("T")[0];
+    const response = await fetch(
+      `/api/calendar/check-holiday?date=${dateString}`
+    );
+    if (!response.ok) throw new Error("Holiday API error");
+    const data: CalendarResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error checking holiday:", error);
+    return { isHoliday: false };
+  }
+};
 
 // Helper function untuk mengecek apakah user bisa clock out
 const canClockOut = (
@@ -333,41 +329,44 @@ const createAttendanceColumns = (
       const statusType = row.getValue("status") as string;
       const currentTime = new Date();
       const rowDate = new Date(row.getValue("startDate"));
-      // const [holidayStatus, setHolidayStatus] = React.useState<{
-      //   isHoliday: boolean;
-      //   holidayName?: string;
-      // } | null>(null);
-
-      // React.useEffect(() => {
-      //   const checkRowDateHoliday = async () => {
-      //     const status = await checkHoliday(rowDate);
-      //     setHolidayStatus(status);
-      //   };
-      //   checkRowDateHoliday();
-      // }, [rowDate]);
+      const [holidayStatus, setHolidayStatus] = React.useState<{
+        isHoliday: boolean;
+        holidayName?: string;
+      } | null>(null);
+      React.useEffect(() => {
+        const checkRowDateHoliday = async () => {
+          const status = await checkHoliday(rowDate);
+          setHolidayStatus(status);
+        };
+        checkRowDateHoliday();
+      }, [rowDate]);
 
       const clockInStatus = !!clockIn;
       const clockOutStatus = !!clockOut;
 
-      const isPastDate = () => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const rowDateStart = new Date(rowDate);
-        rowDateStart.setHours(0, 0, 0, 0);
-        return rowDateStart < today;
-      };
+      // const isPastDate = () => {
+      //   const today = new Date();
+      //   today.setHours(0, 0, 0, 0);
+      //   const rowDateStart = new Date(rowDate);
+      //   rowDateStart.setHours(0, 0, 0, 0);
+      //   return rowDateStart < today;
+      // };
 
-      const isNotFuture = () => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const rowDateStart = new Date(rowDate);
-        rowDateStart.setHours(0, 0, 0, 0);
-        return rowDateStart <= today;
-      };
+      // const isNotFuture = () => {
+      //   const today = new Date();
+      //   today.setHours(0, 0, 0, 0);
+      //   const rowDateStart = new Date(rowDate);
+      //   rowDateStart.setHours(0, 0, 0, 0);
+      //   return rowDateStart <= today;
+      // };
 
-      // if (holidayStatus === null) return null;
+      if (holidayStatus === null) return null;
 
-      if (statusType === "annual leave" || statusType === "permit") {
+      if (
+        statusType === "annual leave" ||
+        statusType === "permit" ||
+        statusType === "sick"
+      ) {
         return (
           <Button
             disabled
@@ -379,119 +378,133 @@ const createAttendanceColumns = (
         );
       }
 
-      // if (holidayStatus.isHoliday && !clockInStatus) {
-      //   const title = holidayStatus.holidayName
-      //     ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
-      //     : "Holiday - Clock in disabled";
-      //   return (
-      //     <Button disabled variant="secondary" title={title}>
-      //       Clock In
-      //     </Button>
-      //   );
-      // }
-
-      const isNewDay = () => {
-        const today = new Date().toISOString().split("T")[0];
-        const isDifferentDay = today !== rowDate.toDateString();
-        const isNotFutureResult = isNotFuture();
-
-        return isDifferentDay && isNotFutureResult;
-      };
-
-      if (!clockInStatus && isNewDay()) {
-        // if (holidayStatus.isHoliday) {
-        //   const title = holidayStatus.holidayName
-        //     ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
-        //     : "Holiday - Clock in disabled";
-        //   return (
-        //     <Button disabled variant="secondary" title={title}>
-        //       Clock In
-        //     </Button>
-        //   );
-        // }
+      if (holidayStatus.isHoliday && !clockInStatus) {
+        const title = holidayStatus.holidayName
+          ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
+          : "Holiday - Clock in disabled";
         return (
-          <Link href="/checkclock/attendance-user">
-            <Button
-              className="bg-primary-900 hover:bg-primary-700"
-              variant="default"
-              size="default"
-            >
-              Clock In
-            </Button>
-          </Link>
-        );
-      }
-
-      if (!clockInStatus) {
-        if (!isNotFuture()) {
-          return (
-            <Button
-              disabled
-              variant="secondary"
-              title="Future date - Clock in disabled"
-            >
-              Clock In
-            </Button>
-          );
-        }
-        if (isTimeAfter(currentTime, workConfig.workEndHour)) {
-          return (
-            <Button
-              disabled
-              variant="secondary"
-              title="Past work hours - Clock in disabled"
-            >
-              Clock In
-            </Button>
-          );
-        }
-        return (
-          <Link href="/checkclock/attendance-user">
-            <Button
-              className="bg-primary-900 hover:bg-primary-700"
-              variant="default"
-              size="default"
-            >
-              Clock In
-            </Button>
-          </Link>
-        );
-      }
-
-      if (clockInStatus && !clockOutStatus && !isPastDate()) {
-        if (canClockOut(clockIn!, currentTime, workConfig)) {
-          return (
-            <Link href="/checkclock/attendance-user">
-              <Button
-                className="bg-primary-900 hover:bg-primary-700"
-                variant="default"
-                size="default"
-              >
-                Clock Out
-              </Button>
-            </Link>
-          );
-        }
-        return (
-          <Button
-            disabled
-            variant="secondary"
-            title={`Clock Out available after ${workConfig.breakEndHour}:00`}
-          >
+          <Button disabled variant="secondary" title={title}>
             Clock In
           </Button>
         );
       }
 
-      if (clockInStatus && (clockOutStatus || isPastDate())) {
+      if (clockIn === null) {
         return (
           <Link href="/checkclock/attendance-user">
-            <Button variant="outline" size="default">
-              Details
+            <Button
+              className="bg-primary-900 hover:bg-primary-700"
+              variant="default"
+              size="default"
+            >
+              Clock In
             </Button>
           </Link>
         );
       }
+
+      // const isNewDay = () => {
+      //   const today = new Date().toISOString().split("T")[0];
+      //   const isDifferentDay = today !== rowDate.toDateString();
+      //   const isNotFutureResult = isNotFuture();
+
+      //   return isDifferentDay && isNotFutureResult;
+      // };
+
+      // if (!clockInStatus && isNewDay()) {
+      //   if (holidayStatus.isHoliday) {
+      //     const title = holidayStatus.holidayName
+      //       ? `Holiday (${holidayStatus.holidayName}) - Clock in disabled`
+      //       : "Holiday - Clock in disabled";
+      //     return (
+      //       <Button disabled variant="secondary" title={title}>
+      //         Clock In
+      //       </Button>
+      //     );
+      //   }
+      //   return (
+      //     <Link href="/checkclock/attendance-user">
+      //       <Button
+      //         className="bg-primary-900 hover:bg-primary-700"
+      //         variant="default"
+      //         size="default"
+      //       >
+      //         Clock In
+      //       </Button>
+      //     </Link>
+      //   );
+      // }
+
+      // if (!clockInStatus) {
+      //   if (!isNotFuture()) {
+      //     return (
+      //       <Button
+      //         disabled
+      //         variant="secondary"
+      //         title="Future date - Clock in disabled"
+      //       >
+      //         Clock In
+      //       </Button>
+      //     );
+      //   }
+      //   if (isTimeAfter(currentTime, workConfig.workEndHour)) {
+      //     return (
+      //       <Button
+      //         disabled
+      //         variant="secondary"
+      //         title="Past work hours - Clock in disabled"
+      //       >
+      //         Clock In
+      //       </Button>
+      //     );
+      //   }
+      //   return (
+      //     <Link href="/checkclock/attendance-user">
+      //       <Button
+      //         className="bg-primary-900 hover:bg-primary-700"
+      //         variant="default"
+      //         size="default"
+      //       >
+      //         Clock In
+      //       </Button>
+      //     </Link>
+      //   );
+      // }
+
+      // if (clockInStatus && !clockOutStatus && !isPastDate()) {
+      //   if (canClockOut(clockIn!, currentTime, workConfig)) {
+      //     return (
+      //       <Link href="/checkclock/attendance-user">
+      //         <Button
+      //           className="bg-primary-900 hover:bg-primary-700"
+      //           variant="default"
+      //           size="default"
+      //         >
+      //           Clock Out
+      //         </Button>
+      //       </Link>
+      //     );
+      //   }
+      //   return (
+      //     <Button
+      //       disabled
+      //       variant="secondary"
+      //       title={`Clock Out available after ${workConfig.breakEndHour}:00`}
+      //     >
+      //       Clock In
+      //     </Button>
+      //   );
+      // }
+
+      // if (clockInStatus && (clockOutStatus || isPastDate())) {
+      //   return (
+      //     <Link href="/checkclock/attendance-user">
+      //       <Button variant="outline" size="default">
+      //         Details
+      //       </Button>
+      //     </Link>
+      //   );
+      // }
 
       return null;
     },
@@ -500,6 +513,5 @@ const createAttendanceColumns = (
 
 // Export function untuk membuat columns dengan konfigurasi custom
 export { createAttendanceColumns };
-
 // Export default columns dengan konfigurasi default
 export const columns = createAttendanceColumns(DEFAULT_WORK_CONFIG);

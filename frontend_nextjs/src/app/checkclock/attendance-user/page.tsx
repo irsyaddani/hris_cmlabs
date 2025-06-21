@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { AttendanceTabs } from "@/components/attendance-components/attendance-tabs";
 
 export default function AttendanceUserPage() {
@@ -24,26 +21,6 @@ export default function AttendanceUserPage() {
       </div>
 
       <AttendanceTabs />
-
-      {/* <div className="flex justify-end">
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            className=" hover:bg-neutral-200 cursor-pointer"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="gap-4 bg-primary-900 hover:bg-primary-700 cursor-pointer"
-          >
-            Submit
-          </Button>
-        </div>
-      </div> */}
     </div>
   );
 }

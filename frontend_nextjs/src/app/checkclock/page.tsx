@@ -8,6 +8,7 @@ import { columns as clockinColumns } from "../../components/data-table-component
 import { columns as clockHistoryColumns } from "../../components/data-table-components/columns-clock-history";
 import { AlertMessage } from "@/components/ui/alert-message";
 import { useUser } from "@/lib/user-context";
+import axios from "axios";
 
 interface CheckClock {
   id: number;
@@ -106,21 +107,23 @@ function AdminCheckClock({
 // User CheckClock Component
 function UserCheckClock() {
   const [userClockData, setUserClockData] = useState<CheckClock[]>([]);
+  const [todayClockInData, setTodayClockInData] = useState<CheckClock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [shouldAddEmptyRow, setShouldAddEmptyRow] = useState<boolean>(false);
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
   useEffect(() => {
     async function fetchUserClockData() {
       try {
-        const token = localStorage.getItem("token");
+        setLoading(true);
+
         const response = await fetch(
           "http://localhost:8000/api/checkclock/user",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers }
         );
 
         if (!response.ok) {
@@ -128,16 +131,26 @@ function UserCheckClock() {
         }
 
         const result = await response.json();
-        console.log("Raw API Response:", result); // Debug log
-        setUserClockData(result.data);
+        const allData = result.data || [];
 
-        if (!result.data || !Array.isArray(result.data)) {
-          throw new Error("Format data API tidak sesuai");
+        setUserClockData(allData);
+
+        const today = new Date().toISOString().split("T")[0];
+        const todayData = allData.filter((item: any) => {
+          const itemDate = item.created_at?.split("T")[0];
+          console.log(item.created_at);
+          return itemDate === today;
+        });
+        console.log(today);
+        if (todayData.length === 0) {
+          setShouldAddEmptyRow(true); // Trigger untuk add empty row
+        } else {
+          setTodayClockInData([todayData[0]]); // Ambil satu data untuk hari ini
         }
 
         setError(null);
       } catch (error: any) {
-        console.error("Fetch error:", error); // Debug log
+        console.error("Fetch error:", error);
         setError(error.message || "Terjadi kesalahan saat mengambil data");
       } finally {
         setLoading(false);
@@ -147,29 +160,52 @@ function UserCheckClock() {
     fetchUserClockData();
   }, []);
 
-  // Filter clock-in data for today - Fixed version
-  const today = new Date().toISOString().split("T")[0];
-  console.log("Today:", today);
+  // 2. Add empty row jika perlu
+  useEffect(() => {
+    if (!shouldAddEmptyRow) return;
 
-  const todayClockIn = userClockData.filter((item) => {
-    const itemDateRaw = item.startDate || item.clockIn;
-    const itemDate = itemDateRaw ? itemDateRaw.split("T")[0] : null;
+    async function createEmptyRow() {
+      try {
+        const postResponse = await axios.post(
+          "http://localhost:8000/api/checkclock/add-empty-row",
+          {},
+          { headers }
+        );
+        console.log("Empty row created:", postResponse.data);
 
-    console.log("Item Date:", itemDate);
+        // Refetch setelah buat baris kosong
+        const refetch = await fetch(
+          "http://localhost:8000/api/checkclock/user",
+          {
+            headers,
+          }
+        );
+        const refetchResult = await refetch.json();
+        const updatedData = refetchResult.data || [];
 
-    return itemDate === today;
-  });
+        setUserClockData(updatedData);
 
-  // Ambil satu entri saja jika duplikat
-  const uniqueTodayClockIn = todayClockIn.length > 0 ? [todayClockIn[0]] : [];
+        const today = new Date().toISOString().split("T")[0];
+        const todayData = updatedData.filter((item: any) => {
+          const itemDate = (item.startDate || item.clockIn)?.split("T")[0];
+          return itemDate === today;
+        });
 
-  console.log("Today's filtered data:", uniqueTodayClockIn); // Debug log
-  console.log("All user data:", userClockData); // Debug log
+        setTodayClockInData(todayData.length > 0 ? [todayData[0]] : []);
+        setShouldAddEmptyRow(false); // Reset flag
+      } catch (postError: any) {
+        console.error("Gagal menambahkan baris kosong:", postError);
+        setError("Gagal menambahkan baris kosong");
+      }
+    }
+
+    createEmptyRow();
+  }, [shouldAddEmptyRow]);
 
   return (
     <div className="space-y-7">
       <DataTable
-        data={loading ? [] : uniqueTodayClockIn}
+        data={loading ? [] : todayClockInData}
         columns={clockinColumns}
         toolbarVariant="clockin"
         loading={loading}
@@ -201,7 +237,7 @@ export default function CheckClockPage() {
   const [alertType, setAlertType] = useState<"success" | "error">("success");
 
   // Fetch data only for admin
-useEffect(() => {
+  useEffect(() => {
     if (!user) return;
 
     if (user.level === "admin") {
@@ -247,7 +283,6 @@ useEffect(() => {
       const response = await fetch("http://localhost:8000/api/checkclock", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
           Authorization: `Bearer ${token}`,
         },
       });
@@ -395,18 +430,18 @@ useEffect(() => {
         />
       )}
 
-        {!user ? (
-          <div>Loading user...</div>
-        ) : user.level === "admin" ? (
-          <AdminCheckClock
-            data={data}
-            loading={loading}
-            error={error}
-            updateApproval={updateApproval}
-          />
-        ) : (
-          <UserCheckClock userId={user.id} />
-        )}
+      {!user ? (
+        <div>Loading user...</div>
+      ) : user.level === "admin" ? (
+        <AdminCheckClock
+          data={data}
+          loading={loading}
+          error={error}
+          updateApproval={updateApproval}
+        />
+      ) : (
+        <UserCheckClock userId={user.id} />
+      )}
     </div>
   );
 }

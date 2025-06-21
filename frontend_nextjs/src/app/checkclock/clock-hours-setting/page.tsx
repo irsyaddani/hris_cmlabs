@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import CheckclockMap from "@/components/map/checkclock-map";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 interface LocationData {
   location: string;
@@ -21,6 +21,32 @@ interface WorkingHours {
   clockOut: string;
   startBreak: string;
   endBreak: string;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+  data?: unknown;
+}
+
+interface UserProfileResponse {
+  data?: {
+    company_id?: number;
+  };
+  company_id?: number;
+}
+
+interface ClockSettingsResponse {
+  data?: {
+    locationName?: string;
+    detailAddress?: string;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+    clockIn?: string;
+    clockOut?: string;
+    breakStart?: string;
+    breakEnd?: string;
+  };
 }
 
 const defaultLocation: LocationData = {
@@ -59,11 +85,14 @@ export default function ClockHoursSettingPage() {
 
       try {
         console.log("📡 Fetching user profile from /api/user...");
-        const response = await axios.get("http://localhost:8000/api/user", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get<UserProfileResponse>(
+          "http://localhost:8000/api/user",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         console.log("✅ API response:", response.data);
 
         // Handle possible nested data structure
@@ -72,13 +101,19 @@ export default function ClockHoursSettingPage() {
           throw new Error("Company ID not found in user profile.");
         }
         setCompanyId(userData.company_id);
-      } catch (err: any) {
-        console.error(
-          "Error fetching company ID:",
-          err.message,
-          err.response?.data
-        );
-        setError("Failed to load user profile. Please log in again.");
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          const axiosError = err as AxiosError<ApiErrorResponse>;
+          console.error(
+            "Axios error:",
+            axiosError.message,
+            axiosError.response?.data
+          );
+          setError("Failed to load user profile. Please log in again.");
+        } else {
+          console.error("Unknown error:", err);
+          setError("An unexpected error occurred.");
+        }
         router.push("/login");
       } finally {
         setIsLoading(false);
@@ -96,7 +131,7 @@ export default function ClockHoursSettingPage() {
       setIsLoading(true);
       try {
         console.log(`📡 Fetching clock settings for company ID: ${companyId}`);
-        const response = await axios.get(
+        const response = await axios.get<ClockSettingsResponse>(
           `http://localhost:8000/api/clock-settings/${companyId}`,
           {
             headers: {
@@ -123,12 +158,17 @@ export default function ClockHoursSettingPage() {
           startBreak: data?.breakStart?.slice(0, 5) ?? "",
           endBreak: data?.breakEnd?.slice(0, 5) ?? "",
         });
-      } catch (error: any) {
-        console.error(
-          "Error fetching settings:",
-          error.message,
-          error.response?.data
-        );
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          const axiosError = error as AxiosError<ApiErrorResponse>;
+          console.error(
+            "Error fetching settings:",
+            axiosError.message,
+            axiosError.response?.data
+          );
+        } else {
+          console.error("Unknown error:", error);
+        }
         setError("Failed to load clock settings.");
         setLocationData(defaultLocation);
         setRadiusInput("250");
@@ -222,12 +262,17 @@ export default function ClockHoursSettingPage() {
         }
       );
       alert("Settings saved successfully!");
-    } catch (error: any) {
-      console.error(
-        "Error saving settings:",
-        error.message,
-        error.response?.data
-      );
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<ApiErrorResponse>;
+        console.error(
+          "Error saving settings:",
+          axiosError.message,
+          axiosError.response?.data
+        );
+      } else {
+        console.error("Unknown error:", error);
+      }
       alert("Failed to save settings. Please try again.");
     }
   };

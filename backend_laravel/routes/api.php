@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', 'getByUserId');
         Route::get('/{id}', 'show');
         Route::post('/', 'store');
+        Route::post('/add-empty-row', 'addEmptyRowIfNotHoliday');
         Route::put('/approval/{id}', 'updateApproval');
         Route::delete('/{id}', 'destroy');
     });
