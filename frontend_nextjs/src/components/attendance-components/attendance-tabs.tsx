@@ -1,6 +1,7 @@
+// Fixed version of your AttendanceTabs component
+
 "use client";
 
-import { AppWindowIcon, CodeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,13 +33,13 @@ const defaultLocation: LocationData = {
 export function AttendanceTabs() {
   const [locationData, setLocationData] =
     useState<LocationData>(defaultLocation);
-  const [radiusInput, setRadiusInput] = useState<string>("250");
+  const [setRadiusInput] = useState<string>("250");
   const [selectedWorkType, setSelectedWorkType] = useState("wfo");
-  const [companyId, setCompanyId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<number | null>(1); // FIX: Set actual company ID
+  const [setIsLoading] = useState(true);
+  const [setError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleWorkTypeChange = (value: string) => {
@@ -80,7 +81,6 @@ export function AttendanceTabs() {
         );
         console.log("✅ Clock settings response:", response.data);
         const data = response.data.data;
-
         const newLocationData = {
           location: data?.locationName ?? defaultLocation.location,
           detailAddress: data?.detailAddress ?? defaultLocation.detailAddress,
@@ -91,11 +91,13 @@ export function AttendanceTabs() {
 
         setLocationData(newLocationData);
         setRadiusInput(String(data?.radius ?? defaultLocation.radius));
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(
           "Error fetching settings:",
-          error.message,
-          error.response?.data
+          error instanceof Error ? error.message : "Unknown error",
+          error instanceof Error && "response" in error
+            ? (error as any).response?.data
+            : undefined
         );
         setError("Failed to load clock settings.");
         setLocationData(defaultLocation);
@@ -139,14 +141,18 @@ export function AttendanceTabs() {
 
     try {
       const now = new Date();
-      const jakartaDate = new Date(
-        now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+      const jakartaOffset = 7 * 60;
+      const localOffset = now.getTimezoneOffset();
+      const jakartaTime = new Date(
+        now.getTime() + (jakartaOffset + localOffset) * 60 * 1000
       );
-      const formattedDate = jakartaDate.toISOString().split("T")[0];
+
+      console.log(jakartaTime.toISOString());
+      const jakartaDateOnly = jakartaTime.toISOString().split("T")[0];
 
       const payload = {
         type: selectedWorkType,
-        clock_in: formattedDate,
+        clock_in: jakartaDateOnly,
         latitude:
           selectedWorkType === "wfo" && attendanceData
             ? attendanceData.userLocation.latitude
@@ -158,7 +164,7 @@ export function AttendanceTabs() {
       };
 
       const response = await axios.post(
-        "http://localhost:8000/api/checkclock", // ganti jika pakai baseURL
+        "http://localhost:8000/api/checkclock",
         payload,
         {
           headers: {
@@ -185,10 +191,13 @@ export function AttendanceTabs() {
     setIsSubmitting(true);
 
     const now = new Date();
-    const jakartaDate = new Date(
-      now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+    const jakartaOffset = 7 * 60;
+    const localOffset = now.getTimezoneOffset();
+    const jakartaTime = new Date(
+      now.getTime() + (jakartaOffset + localOffset) * 60 * 1000
     );
-    const formattedDate = jakartaDate.toISOString().split("T")[0];
+
+    const jakartaDateOnly = jakartaTime.toISOString().split("T")[0];
 
     try {
       const response = await axios.post(
@@ -196,8 +205,8 @@ export function AttendanceTabs() {
         {
           type: selectedWorkType,
           reason: reason,
-          start_date: formattedDate,
-          end_date: formattedDate,
+          start_date: jakartaDateOnly,
+          end_date: jakartaDateOnly,
         },
         {
           headers: {
@@ -209,10 +218,7 @@ export function AttendanceTabs() {
 
       alert("Absent request submitted successfully!");
       console.log("Submitted:", response.data);
-
-      // Reset form if needed
-      setReason(""); // assuming setReason exists
-      // Optionally reset other form states
+      setReason("");
     } catch (error: any) {
       console.error("Error submitting absent:", error);
       alert(
@@ -256,15 +262,14 @@ export function AttendanceTabs() {
                 <div className="grid gap-2 w-full">
                   <Label htmlFor="location">Location</Label>
                   <div className="rounded-lg w-full h-fit">
+                    {/* FIX: Always use office coordinates, not user coordinates */}
                     <CheckclockMapUser
                       officeLocation={{
-                        latitude:
-                          attendanceData?.userLocation.latitude ??
-                          parseFloat(locationData.latitude),
-                        longitude:
-                          attendanceData?.userLocation.longitude ??
-                          parseFloat(locationData.longitude),
-                        radius: parseInt(locationData.radius, 10),
+                        id: "office-main",
+                        name: locationData.location,
+                        latitude: parseFloat(locationData.latitude), // Always office coordinates
+                        longitude: parseFloat(locationData.longitude), // Always office coordinates
+                        radius: locationData.radius,
                       }}
                       onLocationValidation={handleLocationValidation}
                     />
@@ -273,41 +278,64 @@ export function AttendanceTabs() {
 
                 <div className="grid gap-2 w-full">
                   <Label htmlFor="detailAddress">Detail Address</Label>
+                  {/* FIX: Show office address, not validation message */}
                   <Input
                     id="detailAddress"
                     type="text"
-                    placeholder="Jl. Seruni No. 9, Lowokwaru"
-                    value={attendanceData?.message || ""}
+                    placeholder="Office address"
+                    value={locationData.detailAddress}
                     readOnly
                   />
                 </div>
 
                 <div className="w-full grid grid-cols-2 gap-3">
                   <div className="grid gap-2 w-full">
-                    <Label htmlFor="latitude">Latitude</Label>
+                    <Label htmlFor="latitude">User Latitude</Label>
+                    {/* FIX: Show user coordinates when available */}
                     <Input
                       id="latitude"
                       type="text"
-                      placeholder="Latitude"
+                      placeholder="User Latitude"
                       value={
-                        attendanceData?.userLocation.latitude.toString() || ""
+                        attendanceData?.userLocation.latitude.toString() ||
+                        "Not detected"
                       }
                       readOnly
                     />
                   </div>
                   <div className="grid gap-2 w-full">
-                    <Label htmlFor="longitude">Longitude</Label>
+                    <Label htmlFor="longitude">User Longitude</Label>
+                    {/* FIX: Show user coordinates when available */}
                     <Input
                       id="longitude"
                       type="text"
-                      placeholder="Longitude"
+                      placeholder="User Longitude"
                       value={
-                        attendanceData?.userLocation.longitude.toString() || ""
+                        attendanceData?.userLocation.longitude.toString() ||
+                        "Not detected"
                       }
                       readOnly
                     />
                   </div>
                 </div>
+
+                {/* Show validation status */}
+                {attendanceData && (
+                  <div className="grid gap-2 w-full">
+                    <Label>Location Status</Label>
+                    <div
+                      className={`p-3 rounded-lg border ${
+                        attendanceData.isWithinRadius
+                          ? "bg-green-50 border-green-200 text-green-800"
+                          : "bg-red-50 border-red-200 text-red-800"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">
+                        {attendanceData.message}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 

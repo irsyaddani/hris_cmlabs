@@ -3,7 +3,7 @@
 import axios from "axios";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeSchema } from "@/lib/schemas/EmployeeSchema";
@@ -28,9 +28,8 @@ type EmployeeFormValues = z.infer<typeof employeeSchema>;
 export default function EditEmployeePage() {
   // const params = useParams<Params>(); // Type the useParams hook with the Params type
   // const id = params?.id || ""; // Provide a default value or handle null
-const [profile_picture, setprofile_picture] = useState<string | null>(null);
-const [uploadingImage, setUploadingImage] = useState(false);
-
+  const [profile_picture, setprofile_picture] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const searchParams = useSearchParams();
   const id = searchParams?.get("id") || "";
@@ -88,8 +87,7 @@ const [uploadingImage, setUploadingImage] = useState(false);
           bankAccountName: data.bankAccountName,
           annualLeave: data.annualLeave || null, // Handle null/undefined
         });
-          setprofile_picture(data.profile_picture || null);
-
+        setprofile_picture(data.profile_picture || null);
       } catch (err) {
         console.error(err);
         setError("Failed to retrieve employee data.");
@@ -129,7 +127,7 @@ const [uploadingImage, setUploadingImage] = useState(false);
           },
           body: JSON.stringify({
             ...data,
-              profile_picture: profile_picture, 
+            profile_picture: profile_picture,
             birthDate: data.birthDate?.toISOString().split("T")[0],
             joinDate: data.joinDate?.toISOString().split("T")[0],
             annualLeave: isEligibleForAnnualLeave(data.joinDate)
@@ -164,47 +162,49 @@ const [uploadingImage, setUploadingImage] = useState(false);
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-<div className="mb-6 flex items-center space-x-4">
-  <img
-    src={profile_picture || "/default-avatar.png"}
-    alt="Profile"
-    className="w-20 h-20 rounded-full object-cover border"
-  />
-  <div>
-    <input
-      type="file"
-      accept="image/*"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+          <div className="mb-6 flex items-center space-x-4">
+            <img
+              src={profile_picture || "/default-avatar.png"}
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover border"
+            />
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
 
-        setUploadingImage(true);
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", "nl52nz8z"); 
-        formData.append("folder", "employee_profiles");
+                  setUploadingImage(true);
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  formData.append("upload_preset", "nl52nz8z");
+                  formData.append("folder", "employee_profiles");
 
-        try {
-            const res = await fetch("https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload", {
-              method: "POST",
-              body: formData,
-            }
-          );
-          const data = await res.json();
-          setprofile_picture(data.secure_url);
-        } catch (error) {
-          console.error("Upload failed:", error);
-        } finally {
-          setUploadingImage(false);
-        }
-      }}
-    />
-    {uploadingImage && <p className="text-sm text-gray-500">Uploading...</p>}
-  </div>
-</div>
+                  try {
+                    const res = await fetch(
+                      "https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload",
+                      {
+                        method: "POST",
+                        body: formData,
+                      }
+                    );
+                    const data = await res.json();
+                    setprofile_picture(data.secure_url);
+                  } catch (error) {
+                    console.error("Upload failed:", error);
+                  } finally {
+                    setUploadingImage(false);
+                  }
+                }}
+              />
+              {uploadingImage && (
+                <p className="text-sm text-gray-500">Uploading...</p>
+              )}
+            </div>
+          </div>
 
-
-          
           <FormSection title="Personal Information">
             <div className="grid grid-cols-2 gap-7">
               <div className="flex flex-col space-y-4">

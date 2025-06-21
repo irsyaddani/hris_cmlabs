@@ -7,6 +7,7 @@ use App\Models\CheckClockSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 
 class CheckClockController extends Controller
@@ -363,6 +364,52 @@ public function store(Request $request)
     ], 201);
 }
 
+public function addEmptyRowIfNotHoliday(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
 
+            if (!$user || !$user->company) {
+                return response()->json(['message' => 'Unauthorized or company not found'], 403);
+            }
+
+            $employeeId = Auth::user()->employee->id;
+
+            $today = now()->toDateString(); // Format: YYYY-MM-DD
+
+            // Check if a record already exists for today and this user
+            $existingRecord = CheckClock::where('id_employee', $employeeId)
+                ->where('created_at', $today)
+                ->first();
+
+            if ($existingRecord) {
+                return response()->json(['message' => 'Record already exists for today.'], 200);
+            }
+
+            // Create new record with null values
+            $checkclock = CheckClock::create([
+                'id_employee' => $employeeId,
+                'startDate' => null,
+                'endDate' => null,
+                'clock_in' => null,
+                'clock_out' => null,
+                'reason' => null,
+                'file' => null,
+                'work_hours' => null,
+                'status_approval' => null,
+                'type' => "wfo",
+                'latitude' => null,
+                'longitude' => null,
+            ]);
+
+            return response()->json([
+                'data' => $checkclock,
+                'message' => 'Empty row added successfully.',
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Error adding empty row: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to add empty row.'], 500);
+        }
+    }
 
 }

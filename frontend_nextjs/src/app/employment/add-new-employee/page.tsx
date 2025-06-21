@@ -17,16 +17,12 @@ import { IconHelpCircle } from "@tabler/icons-react";
 import { TooltipHelper } from "@/components/ui/tooltip-helper";
 import { TextFieldIcon } from "@/components/form/text-field-icon";
 import { differenceInYears } from "date-fns";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation"; // For handling success/failure params
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
-
-
 export default function AddNewEmployeePage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams(); // To handle success/failure params
   const [loading, setLoading] = useState(false);
@@ -53,18 +49,14 @@ export default function AddNewEmployeePage() {
       bank: "",
       accountNumber: "",
       bankAccountName: "",
-      annualLeave: undefined, 
+      annualLeave: undefined,
     },
   });
 
-const handleImageChange = (file: File) => {
-  setSelectedImage(file);
-};
+  const handleImageChange = (file: File) => {
+    setSelectedImage(file);
+  };
 
-
-
-
-  
   // Helper function to check if join date is >= 1 year
   const isEligibleForAnnualLeave = (
     joinDate: Date | null | undefined
@@ -88,87 +80,84 @@ const handleImageChange = (file: File) => {
     }
   }, [searchParams]);
 
-const onSubmit = async (data: EmployeeFormValues) => {
-  setLoading(true);
-  setError(null);
-  setShowSuccessAlert(false);
+  const onSubmit = async (data: EmployeeFormValues) => {
+    setLoading(true);
+    setError(null);
+    setShowSuccessAlert(false);
 
-  if (!isEligibleForAnnualLeave(data.joinDate)) {
-    data.annualLeave = 0;
-  }
-
-  try {
-    const token = localStorage.getItem("token");
-
-    // 1️⃣ Upload gambar ke Cloudinary kalau ada
-    let imageUrl = "";
-if (selectedImage) {
-  const formData = new FormData();
-  formData.append("file", selectedImage);
-  formData.append("upload_preset", "nl52nz8z"); 
-
-  const cloudinaryRes = await fetch(
-    "https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload",
-    {
-      method: "POST",
-      body: formData,
+    if (!isEligibleForAnnualLeave(data.joinDate)) {
+      data.annualLeave = 0;
     }
-  );
-
-  const cloudinaryData = await cloudinaryRes.json();
-  console.log("Cloudinary Response:", cloudinaryData);
-
-  imageUrl = cloudinaryData.secure_url;
-}
-
-
-    // 2️⃣ Kirim data employee ke Laravel
-    const response = await fetch("http://localhost:8000/api/employees", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        ...data,
-        birthDate: data.birthDate?.toISOString().split("T")[0],
-        joinDate: data.joinDate?.toISOString().split("T")[0],
-        profile_picture: imageUrl,
-      }),
-    });
-
-    const text = await response.text();
-    console.log("Raw response text:", text);
 
     try {
-      const json = JSON.parse(text);
+      const token = localStorage.getItem("token");
 
-      if (!response.ok) {
-        console.error("Backend validation error or other:", json);
-        setError(json.message || "Failed to save data.");
-        return;
+      // 1️⃣ Upload gambar ke Cloudinary kalau ada
+      let imageUrl = "";
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        formData.append("upload_preset", "nl52nz8z");
+
+        const cloudinaryRes = await fetch(
+          "https://api.cloudinary.com/v1_1/dj6rpnycb/image/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const cloudinaryData = await cloudinaryRes.json();
+        console.log("Cloudinary Response:", cloudinaryData);
+
+        imageUrl = cloudinaryData.secure_url;
       }
 
-      setShowSuccessAlert(true);
-      router.push("/employment/?success=employee-added");
-    } catch (jsonError) {
-      console.error("Response is not valid JSON:", jsonError);
-      setError("Respons server tidak valid JSON.");
-    }
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setError("An error occurred while trying to send the data.");
-  } finally {
-    setLoading(false);
-  }
-};
+      // 2️⃣ Kirim data employee ke Laravel
+      const response = await fetch("http://localhost:8000/api/employees", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...data,
+          birthDate: data.birthDate?.toISOString().split("T")[0],
+          joinDate: data.joinDate?.toISOString().split("T")[0],
+          profile_picture: imageUrl,
+        }),
+      });
 
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
+      try {
+        const json = JSON.parse(text);
+
+        if (!response.ok) {
+          console.error("Backend validation error or other:", json);
+          setError(json.message || "Failed to save data.");
+          return;
+        }
+
+        setShowSuccessAlert(true);
+        router.push("/employment/?success=employee-added");
+      } catch (jsonError) {
+        console.error("Response is not valid JSON:", jsonError);
+        setError("Respons server tidak valid JSON.");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("An error occurred while trying to send the data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-[100vh] flex flex-col flex-1 p-6 gap-7 relative">
-    <UploadProfile onChange={handleImageChange} />
-
+      <UploadProfile onChange={handleImageChange} />
 
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -283,8 +272,8 @@ if (selectedImage) {
                       }
                       content={
                         <p className="text-sm text-center">
-                          Value ignored and set to 0 if employee hasn’t 
-                          reached 1 year.
+                          Value ignored and set to 0 if employee hasn’t reached
+                          1 year.
                         </p>
                       }
                       side="right"
@@ -364,7 +353,7 @@ if (selectedImage) {
                 {loading ? "Loading..." : "Add employee"}
               </Button>
             </div>
-          </div> 
+          </div>
         </form>
       </FormProvider>
     </div>
