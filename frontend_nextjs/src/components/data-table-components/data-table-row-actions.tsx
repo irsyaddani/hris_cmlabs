@@ -87,7 +87,10 @@ export function DataTableRowActions<TData>({
         <DropdownMenuContent align="end" className="w-[160px]">
           <p className="text-sm font-semibold px-1.5 py-1.5">Action</p>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleDetailsClick}>
+          <DropdownMenuItem
+            onClick={handleDetailsClick}
+            className="cursor-pointer"
+          >
             Details
           </DropdownMenuItem>
           <ConfirmDialog

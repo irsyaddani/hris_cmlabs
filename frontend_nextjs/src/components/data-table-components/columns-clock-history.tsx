@@ -20,7 +20,34 @@ const formatDate = (dateStr?: string | null): string => {
 // Helper function to format time
 const formatTime = (timeStr?: string | null): string => {
   if (!timeStr) return "-";
-  return new Date(timeStr).toLocaleTimeString("id-ID", {
+
+  // Debug: Log raw input
+  // console.log("Raw timeStr:", timeStr);
+
+  let date: Date;
+
+  // Handle different timestamp formats
+  if (timeStr.includes("T") && timeStr.endsWith("Z")) {
+    // ISO UTC format (e.g., "2025-06-23T15:18:00.000Z")
+    date = new Date(timeStr);
+  } else if (timeStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+    // Local format without timezone (e.g., "2025-06-23 22:18:00")
+    date = new Date(`${timeStr} +0700`); // Assume WIB (UTC+7)
+  } else {
+    // Fallback: Try parsing directly
+    date = new Date(timeStr);
+  }
+
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    console.warn("Invalid timeStr:", timeStr);
+    return "-";
+  }
+
+  // Debug: Log parsed date
+  // console.log("Parsed date:", date, "Formatted:", date.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" }));
+
+  return date.toLocaleTimeString("id-ID", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Jakarta",
@@ -36,6 +63,12 @@ const calculateWorkHours = (
 
   const start = new Date(clockIn);
   const end = clockOut ? new Date(clockOut) : new Date();
+
+  // Ensure valid dates
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    console.warn("Invalid clockIn or clockOut:", clockIn, clockOut);
+    return "-";
+  }
 
   const diffMs = end.getTime() - start.getTime();
   const hours = Math.max(0, diffMs / 1000 / 60 / 60);

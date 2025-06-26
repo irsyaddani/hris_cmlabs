@@ -1,11 +1,9 @@
-// Fixed version of your AttendanceTabs component
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
 import { Textarea } from "../ui/textarea";
@@ -13,6 +11,7 @@ import UploadFile from "../ui/upload-file";
 import CheckclockMapUser from "../map/checkclock-map-user";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { AlertMessage } from "@/components/ui/alert-message"; // Import AlertMessage
 
 interface LocationData {
   location: string;
@@ -35,17 +34,19 @@ export function AttendanceTabs() {
     useState<LocationData>(defaultLocation);
   const [setRadiusInput] = useState<string>("250");
   const [selectedWorkType, setSelectedWorkType] = useState("wfo");
-  const [companyId, setCompanyId] = useState<number | null>(1); // FIX: Set actual company ID
+  const [companyId, setCompanyId] = useState<number | null>(1);
   const [setIsLoading] = useState(true);
-  const [setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Error state for alerts
+  const [success, setSuccess] = useState<string | null>(null); // Success state for alerts
   const [reason, setReason] = useState("");
-  const [setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Renamed for consistency
   const router = useRouter();
 
   const handleWorkTypeChange = (value: string) => {
     setSelectedWorkType(value);
-    // Reset attendance data when work type changes
     setAttendanceData(null);
+    setError(null); // Clear error on work type change
+    setSuccess(null); // Clear success on work type change
   };
 
   interface AttendanceData {
@@ -110,34 +111,35 @@ export function AttendanceTabs() {
     fetchSettings();
   }, [companyId]);
 
-  // Handle location validation from the map component
   const handleLocationValidation = (data: AttendanceData) => {
     console.log("Location validation result:", data);
     setAttendanceData(data);
   };
 
-  // Check if submit should be enabled for Present tab
   const isPresentSubmitEnabled = () => {
     if (selectedWorkType === "wfh") {
-      return true; // WFH is always enabled
+      return true;
     }
     if (selectedWorkType === "wfo") {
-      return attendanceData?.isWithinRadius || false; // WFO only if within radius
+      return attendanceData?.isWithinRadius || false;
     }
     return false;
   };
 
-  // Handle check-in submission
   const handlePresentSubmit = async () => {
     if (
       selectedWorkType === "wfo" &&
       (!attendanceData || !attendanceData.isWithinRadius)
     ) {
-      alert("Please ensure you are within the office area before checking in.");
+      setError(
+        "Please ensure you are within the office area before checking in."
+      );
       return;
     }
 
     setIsClockIn(true);
+    setError(null);
+    setSuccess(null);
 
     try {
       const now = new Date();
@@ -147,7 +149,6 @@ export function AttendanceTabs() {
         now.getTime() + (jakartaOffset + localOffset) * 60 * 1000
       );
 
-      console.log(jakartaTime.toISOString());
       const jakartaDateOnly = jakartaTime.toISOString().split("T")[0];
 
       const payload = {
@@ -174,13 +175,19 @@ export function AttendanceTabs() {
       );
 
       if (response.status === 200 || response.status === 201) {
-        alert(`Check-in successful for ${selectedWorkType.toUpperCase()}! ✅`);
+        setSuccess(
+          `Check-in successful for ${selectedWorkType.toUpperCase()}! ✅`
+        );
+        // Redirect to /checkclock with success parameter
+        router.push(`/checkclock?success=attendance-added`);
       } else {
         throw new Error("Check-in failed");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Check-in error:", error);
-      alert("Check-in failed. Please try again.");
+      setError(
+        error?.response?.data?.message || "Check-in failed. Please try again."
+      );
     } finally {
       setIsClockIn(false);
     }
@@ -189,6 +196,8 @@ export function AttendanceTabs() {
   const handleAbsentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
 
     const now = new Date();
     const jakartaOffset = 7 * 60;
@@ -216,12 +225,12 @@ export function AttendanceTabs() {
         }
       );
 
-      alert("Absent request submitted successfully!");
-      console.log("Submitted:", response.data);
+      setSuccess("Absent request submitted successfully!");
+      router.push(`/checkclock?success=attendance-added`);
       setReason("");
     } catch (error: any) {
       console.error("Error submitting absent:", error);
-      alert(
+      setError(
         error?.response?.data?.message || "Failed to submit absent request."
       );
     } finally {
@@ -231,6 +240,26 @@ export function AttendanceTabs() {
 
   return (
     <div className="flex w-full flex-col gap-6">
+      {/* Alerts */}
+      {error && (
+        <AlertMessage
+          type="error"
+          title="Error"
+          message={error}
+          onClose={() => setError(null)}
+          className="fixed bottom-6 right-6"
+        />
+      )}
+      {success && (
+        <AlertMessage
+          type="success"
+          title="Success!"
+          message={success}
+          onClose={() => setSuccess(null)}
+          className="fixed bottom-6 right-6"
+        />
+      )}
+
       <Tabs defaultValue="present">
         <TabsList>
           <TabsTrigger value="present">Present</TabsTrigger>
@@ -256,19 +285,17 @@ export function AttendanceTabs() {
               </RadioGroup>
             </div>
 
-            {/* Only show map and location fields for WFO */}
             {selectedWorkType === "wfo" && (
               <>
                 <div className="grid gap-2 w-full">
                   <Label htmlFor="location">Location</Label>
                   <div className="rounded-lg w-full h-fit">
-                    {/* FIX: Always use office coordinates, not user coordinates */}
                     <CheckclockMapUser
                       officeLocation={{
                         id: "office-main",
                         name: locationData.location,
-                        latitude: parseFloat(locationData.latitude), // Always office coordinates
-                        longitude: parseFloat(locationData.longitude), // Always office coordinates
+                        latitude: parseFloat(locationData.latitude),
+                        longitude: parseFloat(locationData.longitude),
                         radius: locationData.radius,
                       }}
                       onLocationValidation={handleLocationValidation}
@@ -278,7 +305,6 @@ export function AttendanceTabs() {
 
                 <div className="grid gap-2 w-full">
                   <Label htmlFor="detailAddress">Detail Address</Label>
-                  {/* FIX: Show office address, not validation message */}
                   <Input
                     id="detailAddress"
                     type="text"
@@ -291,7 +317,6 @@ export function AttendanceTabs() {
                 <div className="w-full grid grid-cols-2 gap-3">
                   <div className="grid gap-2 w-full">
                     <Label htmlFor="latitude">User Latitude</Label>
-                    {/* FIX: Show user coordinates when available */}
                     <Input
                       id="latitude"
                       type="text"
@@ -305,7 +330,6 @@ export function AttendanceTabs() {
                   </div>
                   <div className="grid gap-2 w-full">
                     <Label htmlFor="longitude">User Longitude</Label>
-                    {/* FIX: Show user coordinates when available */}
                     <Input
                       id="longitude"
                       type="text"
@@ -319,7 +343,6 @@ export function AttendanceTabs() {
                   </div>
                 </div>
 
-                {/* Show validation status */}
                 {attendanceData && (
                   <div className="grid gap-2 w-full">
                     <Label>Location Status</Label>
@@ -339,7 +362,6 @@ export function AttendanceTabs() {
               </>
             )}
 
-            {/* WFH message */}
             {selectedWorkType === "wfh" && (
               <div className="grid gap-2 w-full">
                 <div className="p-3 rounded-lg border bg-blue-50 border-blue-200 text-blue-800">
@@ -350,7 +372,6 @@ export function AttendanceTabs() {
               </div>
             )}
 
-            {/* Cancel and Submit Buttons for Present */}
             <div className="flex justify-end">
               <div className="flex gap-3">
                 <Button
@@ -358,7 +379,7 @@ export function AttendanceTabs() {
                   variant="secondary"
                   size="lg"
                   className="hover:bg-neutral-200 cursor-pointer"
-                  onClick={() => router.push(`/checkclock/`)}
+                  onClick={() => router.push(`/checkclock`)}
                 >
                   Cancel
                 </Button>
@@ -367,7 +388,7 @@ export function AttendanceTabs() {
                   onClick={handlePresentSubmit}
                   size="lg"
                   disabled={!isPresentSubmitEnabled() || isClockIn}
-                  className="bg-primary-900 hover:bg-primary-700 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                  className="bg-primary-900 hover:bg-primary-700 cursor-pointer disabled:bg-neutral-400 disabled:cursor-not-allowed"
                 >
                   {isClockIn ? "Submitting..." : "Submit"}
                 </Button>
@@ -414,7 +435,6 @@ export function AttendanceTabs() {
               <UploadFile />
             </div>
 
-            {/* Cancel and Submit Buttons for Absent */}
             <div className="flex justify-end">
               <div className="flex gap-3">
                 <Button
@@ -428,11 +448,13 @@ export function AttendanceTabs() {
                 </Button>
 
                 <Button
+                  clockin
                   onClick={handleAbsentSubmit}
                   size="lg"
-                  className="bg-primary-900 hover:bg-primary-700"
+                  className="bg-primary-900 hover:bg-primary-700 cursor-pointer"
+                  disabled={isSubmitting}
                 >
-                  Submit
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </div>
             </div>
